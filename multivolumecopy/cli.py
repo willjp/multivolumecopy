@@ -53,6 +53,11 @@ class CommandlineInterface(object):
             device_padding=args.padding,
         )
 
+    @staticmethod
+    def show():
+        c = CommandlineInterface()
+        c.parse_args()
+
 
 if __name__ == '__main__':
     cli = CommandlineInterface()

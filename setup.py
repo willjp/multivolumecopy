@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 # builtin
-from __future__ import unicode_literals
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 # package
 import multivolumecopy
+import os
 # external
 import setuptools
 # internal
@@ -19,14 +16,38 @@ if __version__.endswith(('a', 'b')):
     )
 
 
+def get_zsh_completionpath():
+    paths = (
+        '/usr/local/share/zsh/functions/Completion/Unix',
+        '/usr/share/zsh/functions/Completion/Unix',
+    )
+    for path in paths:
+        if os.path.isdir(path):
+            return path
+    raise RuntimeError(
+        'No fpath could be found for installation in: %s' % repr(paths))
+
+
 if __name__ == '__main__':
     setuptools.setup(
         name='multivolumecopy',
         version=__version__,
         author='Will Pittman',
-        license='BSD',
+        license='MIT',
         packages=setuptools.find_packages(exclude=['tests/*']),
-        test_requires=[
+        entry_points={
+            'console_scripts': [
+                'multivolumecopy = multivolumecopy.cli:CommandlineInterface.show',
+            ],
+        },
+        data_files=[
+            (get_zsh_completionpath(), ['data/autocomplete.zsh/_multivolumecopy']),
+        ],
+        setup_requires=[
             'setuptools',
+        ],
+        test_requires=[
+            'pytest',
+            'mock',
         ],
     )

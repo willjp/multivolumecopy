@@ -1,0 +1,15 @@
+#compdef multivolumecopy
+
+_multivolumecopy() {
+
+local context state line expl implementation 
+
+_arguments -C \
+    "1:first:_files" \
+    "::next:_files" \
+    {-h,--help}'[show help information]'   \
+    {-o,--output}'[path backups are written to]' \
+    --padding'[room to leave on disk before prompting for new disk]'
+}
+
+_wallmgr "$@"
