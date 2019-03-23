@@ -1,6 +1,6 @@
-0.0.1:
+0.0.1:  # released
     - written
-0.1.0:
+0.1.0:  # released
     - response was not being decoded back to unicode from bytestring returned shell
     - job now dumped to a jsonfile, can specify file and index to restart an interrupted job from midway through.
     - progressbar showing current device progress, and overall progress
