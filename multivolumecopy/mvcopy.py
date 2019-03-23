@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 _jobfile = './mvcopy-jobdata.json'
 
 
-def mvcopy_srcpaths(srcpaths, output, device_padding=None):
+def mvcopy_srcpaths(srcpaths, output, device_padding=None, no_progressbar=False):
     """ Copy files from under `srcpaths`, prompting for new volumes as they are filled.
 
     Args:
@@ -44,10 +44,10 @@ def mvcopy_srcpaths(srcpaths, output, device_padding=None):
     # write file with job info
     write_copyfiles(_jobfile, copyfiles)
 
-    _mvcopy_files(copyfiles, output, device_padding)
+    _mvcopy_files(copyfiles, output, device_padding, no_progressbar=no_progressbar)
 
 
-def mvcopy_jobfile(jobfile, output, device_padding=None, index=None):
+def mvcopy_jobfile(jobfile, output, device_padding=None, index=None, no_progressbar=False):
     """ Copy files defined within `jobfile` , prompting for new volumes as they are filled.
 
     Args:
@@ -69,10 +69,10 @@ def mvcopy_jobfile(jobfile, output, device_padding=None, index=None):
         copyfiles = json.loads(fd.read())
 
     # begin copying
-    _mvcopy_files(copyfiles, output, device_padding, index)
+    _mvcopy_files(copyfiles, output, device_padding, index, no_progressbar)
 
 
-def _mvcopy_files(copyfiles, output, device_padding=None, index=None):
+def _mvcopy_files(copyfiles, output, device_padding=None, index=None, no_progressbar=False):
     """ Copies files, prompting for new device when device is full.
 
     Args:
@@ -102,6 +102,7 @@ def _mvcopy_files(copyfiles, output, device_padding=None, index=None):
         device_padding = filesystem.size_to_bytes(device_padding)
 
     # copy files
+    total = len(copyfiles)
     while index < len(copyfiles):
         lastindex = _get_volume_lastindex(index, output, copyfiles, device_padding)
         logger.info('Destination will hold {}/{}, files starting at {}'.format(
@@ -111,6 +112,7 @@ def _mvcopy_files(copyfiles, output, device_padding=None, index=None):
         _volume_delete_extraneous(index, lastindex, copyfiles, output)
 
         while index <= lastindex:
+            _write_progressbar(index, total, lastindex)
             copydata = copyfiles[index]
             filesystem.copyfile(src=copydata['src'], dst=copydata['dst'])
             filesystem.copyfilestat(src=copydata['src'], dst=copydata['dst'])
@@ -121,6 +123,8 @@ def _mvcopy_files(copyfiles, output, device_padding=None, index=None):
             lastindex != len(copyfiles) - 1
         ]):
             _prompt_diskfull(output, index)
+
+    _write_progressbar(index, total, lastindex)
 
     # delete jobfile on completion
     if os.path.isfile(_jobfile):
@@ -216,6 +220,39 @@ def _prompt_diskfull(output, index=None):
         elif command in ('q', 'Q'):
             print('Aborted by user')
             sys.exit(1)
+
+
+def _write_progressbar(index, total, lastindex):
+    """ Prints/Updates a progressbar on stdout.
+
+    Example:
+
+        ::
+            Current Device: [####            ] 25.0%    (Job Total: [############     ] 70.12%)
+
+    Args:
+        index (int):      index of file being copied (relative to all files)
+        total (int):      total number of files to be copied
+        lastindex (int):  last index that will be copied to the current device before it is full
+    """
+    device_progress = (index / total) * 100
+    device_completed_steps = int(device_progress / 4)  # 25 steps-per-progressbar
+    device_uncompleted_steps = 25 - device_completed_steps
+
+    total_progress = (index / total) * 100
+    total_completed_steps = int(total_progress / 4)  # 25 steps-per-progressbar
+    total_uncompleted_steps = 25 - total_completed_steps
+
+    sys.stdout.write(
+        '\rCurrent Device: [{}{}] {}%    (Job Total:[{}{}] {}%) '.format(
+            '#' * device_completed_steps,
+            ' ' * device_uncompleted_steps,
+            round(device_progress, 2),
+            '#' * total_completed_steps,
+            ' ' * total_uncompleted_steps,
+            round(total_progress, 2),
+        )
+    )
 
 
 def write_copyfiles(filepath, copyfiles):

@@ -45,6 +45,10 @@ class CommandlineInterface(object):
             type=str,
         )
         self.parser.add_argument(
+            '--no-progress', help='Do not show a progressbar',
+            action='store_true',
+        )
+        self.parser.add_argument(
             '-o', '--output', help='The path you\'d like to write backups to'
         )
 
@@ -76,6 +80,7 @@ class CommandlineInterface(object):
         common_kwargs = dict(
             output=args.output,
             device_padding=args.device_padding,
+            no_progressbar=args.no_progress,
         )
 
         if args.jobfile:
