@@ -109,11 +109,11 @@ def _mvcopy_files(copyfiles, output, device_padding=None, index=None, no_progres
             lastindex, len(copyfiles)-1, index
         ))
         logger.info('Checking for/Deleting incorrect/outdated files on destination..')
-        _volume_delete_extraneous(index, lastindex, copyfiles, output)
+        _volume_delete_extraneous(index, lastindex, copyfiles, output, no_progressbar)
 
         while index <= lastindex:
-            _write_progressbar(index, total, lastindex)
             copydata = copyfiles[index]
+            _update_copy_progressbar(index, total, lastindex, copydata['src'], no_progressbar)
             filesystem.copyfile(src=copydata['src'], dst=copydata['dst'])
             filesystem.copyfilestat(src=copydata['src'], dst=copydata['dst'])
             index += 1
@@ -124,7 +124,7 @@ def _mvcopy_files(copyfiles, output, device_padding=None, index=None, no_progres
         ]):
             _prompt_diskfull(output, index)
 
-    _write_progressbar(index, total, lastindex)
+    _update_copy_progressbar(index, total, lastindex, '', no_progressbar)
 
     # delete jobfile on completion
     if os.path.isfile(_jobfile):
@@ -171,9 +171,8 @@ def _get_volume_lastindex(index, output, copyfiles, device_padding=None):
     return lastindex
 
 
-def _volume_delete_extraneous(index, lastindex, copyfiles, output):
-    """
-    Produces a list of all destfiles that will exist in `output` for
+def _volume_delete_extraneous(index, lastindex, copyfiles, output, no_progressbar=False):
+    """ Produces a list of all destfiles that will exist in `output` for
     this volume, and deletes all other files.
 
     Args:
@@ -192,14 +191,23 @@ def _volume_delete_extraneous(index, lastindex, copyfiles, output):
         dstfiles.add(copyfile['dst'])
         i += 1
 
-    # delete all files that are not from this list of srcfiles
+    # obtain list of files to delete (files not included in list of srcfiles)
+    deletefiles = set()
     for (root, dirnames, filenames) in os.walk(output):
         for filename in filenames:
             filepath = os.path.abspath('{}/{}'.format(root, filename))
 
             if filepath not in dstfiles:
-                logger.debug('Deleting outdated destfile: {}'.format(filepath))
-                os.remove(filepath)
+                deletefiles.add(filepath)
+    deletefiles = list(deletefiles)
+
+    # delete files
+    num_deletes = len(deletefiles)
+    for i in range(num_deletes):
+        filepath = deletefiles[i]
+        _update_delete_progressbar(i + 1, num_deletes, filepath, no_progressbar)
+        logger.debug('Deleting outdated destfile: {}'.format(filepath))
+        os.remove(filepath)
 
 
 def _prompt_diskfull(output, index=None):
@@ -222,7 +230,7 @@ def _prompt_diskfull(output, index=None):
             sys.exit(1)
 
 
-def _write_progressbar(index, total, lastindex):
+def _update_copy_progressbar(index, total, lastindex, srcfile, no_progressbar=False):
     """ Prints/Updates a progressbar on stdout.
 
     Example:
@@ -235,24 +243,62 @@ def _write_progressbar(index, total, lastindex):
         total (int):      total number of files to be copied
         lastindex (int):  last index that will be copied to the current device before it is full
     """
-    device_progress = (index / total) * 100
-    device_completed_steps = int(device_progress / 4)  # 25 steps-per-progressbar
-    device_uncompleted_steps = 25 - device_completed_steps
 
+    if no_progressbar:
+        return
+
+    device_progress = (index / total) * 100
     total_progress = (index / total) * 100
-    total_completed_steps = int(total_progress / 4)  # 25 steps-per-progressbar
-    total_uncompleted_steps = 25 - total_completed_steps
+
+    completed_steps = int(device_progress / 4)  # 25 steps-per-progressbar
+    uncompleted_steps = 25 - completed_steps
+
+    if len(srcfile) < 50:
+        print_filepath = srcfile
+    else:
+        print_filepath = '...' + srcfile[-50:]
 
     sys.stdout.write(
-        '\rCurrent Device: [{}{}] {}%    (Job Total:[{}{}] {}%) '.format(
-            '#' * device_completed_steps,
-            ' ' * device_uncompleted_steps,
+        '\r(Device: {}%|Total: {}%):    [{}{}]    {} '.format(
             round(device_progress, 2),
-            '#' * total_completed_steps,
-            ' ' * total_uncompleted_steps,
             round(total_progress, 2),
+            '#' * completed_steps,
+            ' ' * uncompleted_steps,
+            print_filepath,
         )
     )
+    sys.stdout.flush()
+
+    # write newline when job complete (so future \r prints get their own line)
+    if device_progress >= 100:
+        sys.stdout.write('\n')
+
+
+def _update_delete_progressbar(index, total, filepath, no_progressbar=False):
+    if no_progressbar:
+        return
+
+    progress = (index / total) * 100
+    completed_steps = int(progress / 4)  # 25 steps-per-progressbar
+    uncompleted_steps = 25 - completed_steps
+
+    if len(filepath) < 50:
+        print_filepath = filepath
+    else:
+        print_filepath = '...' + filepath[-50:]
+
+    sys.stdout.write(
+        '\r(Deleting Out-Dated Files {}%): [{}{}]    {}'.format(
+            round(progress, 2),
+            '#' * completed_steps,
+            ' ' * uncompleted_steps,
+            print_filepath,
+        )
+    )
+
+    # write newline when job complete (so future \r prints get their own line)
+    if progress >= 100:
+        sys.stdout.write('\n')
 
 
 def write_copyfiles(filepath, copyfiles):
