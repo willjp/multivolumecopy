@@ -53,11 +53,16 @@ def mvcopy(srcpaths, output, device_padding=None):
         device_padding = filesystem.size_to_bytes(device_padding)
 
     # copy
+    logger.info('Reading files to copy..')
     index = 0
     copyfiles = list_copyfiles(srcpaths, output)
 
     while index < len(copyfiles):
         lastindex = _get_volume_lastindex(index, output, copyfiles, device_padding)
+        logger.info('Destination will hold {}/{}, files starting at {}'.format(
+            lastindex, len(copyfiles)-1, index
+        ))
+        logger.info('Checking for/Deleting incorrect/outdated files on destination..')
         _volume_delete_extraneous(index, lastindex, copyfiles, output)
 
         while index <= lastindex:
@@ -140,6 +145,7 @@ def _volume_delete_extraneous(index, lastindex, copyfiles, output):
             filepath = os.path.abspath('{}/{}'.format(root, filename))
 
             if filepath not in dstfiles:
+                logger.debug('Deleting outdated destfile: {}'.format(filepath))
                 os.remove(filepath)
 
 
@@ -204,4 +210,7 @@ def list_copyfiles(srcpaths, output):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format='%(levelname)s| %(msg)s')
+    if not os.path.isdir('/var/tmp/qtconfigs'):
+        os.makedirs('/var/tmp/qtconfigs')
     mvcopy(['~/.config/qutebrowser'], '/var/tmp/qtconfigs')
+    #_prompt_diskfull('/home/will')
