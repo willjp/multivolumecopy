@@ -18,13 +18,22 @@ from multivolumecopy import mvcopy
 class CommandlineInterface(object):
     def __init__(self):
         self.parser = argparse.ArgumentParser(
-            description='Simple Multi-Volume file copy tool. You will be prompted when the medium is full.'
+            description=('Simple Multi-Volume file copy tool. You will be prompted to replace device '
+                         'when the medium is full.')
         )
 
         self.parser.add_argument(
             'srcpaths', nargs='+', help='List of filepaths to copy'
         )
-
+        self.parser.add_argument(
+            '-f', '--jobfile', help='Continue a pre-existing mvcopy job that was interrupted. (also see --start-index)',
+            metavar='/path/to/mvcopy-jobdata.json'
+        )
+        self.parser.add_argument(
+            '-i', '--start-index', help='Index you\'d like to begin copying from. Ignored if using srcpaths.',
+            metavar='533',
+            type=int,
+        )
         self.parser.add_argument(
             '--padding', help='Room to leave on each backup disk before prompting for a new disk',
             metavar='5M',
@@ -39,24 +48,27 @@ class CommandlineInterface(object):
     def parse_args(self):
         args = self.parser.parse_args()
 
+        # validate arguments
         if not args.output:
             print('-o/--output flag is mandatory')
             sys.exit(1)
 
-        if not args.srcpaths:
-            print('No srcpaths specified to copy')
+        if not args.srcpaths and not args.jobfile:
+            print('No srcpaths or jobfile specified to copy')
             sys.exit(1)
 
-        mvcopy.mvcopy(
-            srcpaths=args.srcpaths,
+        # begin copying
+        common_kwargs = dict(
             output=args.output,
-            device_padding=args.padding,
+            device_padding=args.device_padding,
         )
 
-    @staticmethod
-    def show():
-        c = CommandlineInterface()
-        c.parse_args()
+        if args.jobfile:
+            if args.srcpaths:
+                print('Print jobfile specified, so srcpaths will be ignored: {}'.format(repr(args.srcpaths)))
+            mvcopy.mvcopy_jobfile(args.jobfile, index=args.index, **common_kwargs)
+        elif args.srcpaths:
+            mvcopy.movcopy_srcpaths(args.srcpaths, **common_kwargs)
 
 
 if __name__ == '__main__':

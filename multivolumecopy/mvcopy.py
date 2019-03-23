@@ -6,29 +6,22 @@ Rsync wrapper to facilitate quick n' dirty multi-HDD backups of a file-server.
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+import json
+import logging
 import os
 import sys
-import logging
 # package
 # external
 # internal
 from multivolumecopy import filesystem
 
 
-# TODO: if insufficient room for single-file, request next volume instead of exception
-
-
 logger = logging.getLogger(__name__)
+_jobfile = './mvcopy-jobdata.json'
 
 
-def mvcopy(srcpaths, output, device_padding=None):
-    """ copy files from srcpaths to output, spanning multiple volumes (HDDs, tapes, etc.).
-    HDD must be formatted and mounted in order to be used.
-
-     .. warning::
-
-         Backup Volume size cannot exceed python's :py:obj`sys.maxsize`
-         in bytes. This works out to be 8589934592 TB.
+def mvcopy_srcpaths(srcpaths, output, device_padding=None):
+    """ Copy files from under `srcpaths`, prompting for new volumes as they are filled.
 
     Args:
         srcpaths (list): ``(ex: ['/mnt/movies', '/mnt/music', ...])``
@@ -38,25 +31,77 @@ def mvcopy(srcpaths, output, device_padding=None):
             The directory you'd like to backup to.
 
     Other Parameters:
-        device_padding (str, int, optional): ``(ex: 1024, '10G', '5M', ..)``
-            Room to leave empty on the output device (HDD, dvd, etc)
-            before prompting user to insert new backup media.
+        device_padding (str, optional): ``(ex: '5G', '500M' )``
+            String indicating how much empty room you'd like to leave on the
+            device.
+
     """
-    # defaults
+    # get list of files to copy
+    logger.info('Reading files to copy..')
+    srcpaths = sorted([os.path.expanduser(p) for p in srcpaths])
+    copyfiles = list_copyfiles(srcpaths, output)
+
+    # write file with job info
+    write_copyfiles(_jobfile, copyfiles)
+
+    _mvcopy_files(copyfiles, output, device_padding)
+
+
+def mvcopy_jobfile(jobfile, output, device_padding=None, index=None):
+    """ Copy files defined within `jobfile` , prompting for new volumes as they are filled.
+
+    Args:
+        output (str): ``(ex: '/mnt/backup' )``
+            The directory you'd like to backup to.
+
+    Other Parameters:
+        device_padding (str, optional): ``(ex: '5G', '500M' )``
+            String indicating how much empty room you'd like to leave on the
+            device.
+
+        index (int, optional): ``(ex: 540)``
+            Index of the file you'd like to begin copying from
+            in `jobfile` .
+    """
+    # get list of files to copy
+    logger.info('Reading files to copy..')
+    with open(jobfile, 'r') as fd:
+        copyfiles = json.loads(fd.read())
+
+    # begin copying
+    _mvcopy_files(copyfiles, output, device_padding, index)
+
+
+def _mvcopy_files(copyfiles, output, device_padding=None, index=None):
+    """ Copies files, prompting for new device when device is full.
+
+    Args:
+        copyfiles (list):
+            A list of dictionaries with information about files being copied.
+
+        output (str):
+            Directory files are being copied to.
+
+    Other Parameters:
+        device_padding (str, optional): ``(ex: '5G', '500M' )``
+            String indicating how much empty room you'd like to leave on the
+            device.
+
+        index (int, optional): ``(ex: 540)``
+            Index of the file you'd like to begin copying from
+            in `jobfile` .
+    """
+    # default values
     if device_padding is None:
         device_padding = 0
-
-    srcpaths = sorted([os.path.expanduser(p) for p in srcpaths])
+    if index is None:
+        index = 0
 
     # validation
     if not isinstance(device_padding, int):
         device_padding = filesystem.size_to_bytes(device_padding)
 
-    # copy
-    logger.info('Reading files to copy..')
-    index = 0
-    copyfiles = list_copyfiles(srcpaths, output)
-
+    # copy files
     while index < len(copyfiles):
         lastindex = _get_volume_lastindex(index, output, copyfiles, device_padding)
         logger.info('Destination will hold {}/{}, files starting at {}'.format(
@@ -75,7 +120,11 @@ def mvcopy(srcpaths, output, device_padding=None):
             lastindex < len(copyfiles),
             lastindex != len(copyfiles) - 1
         ]):
-            _prompt_diskfull(output)
+            _prompt_diskfull(output, index)
+
+    # delete jobfile on completion
+    if os.path.isfile(_jobfile):
+        os.remove(_jobfile)
 
 
 def _get_volume_lastindex(index, output, copyfiles, device_padding=None):
@@ -149,9 +198,11 @@ def _volume_delete_extraneous(index, lastindex, copyfiles, output):
                 os.remove(filepath)
 
 
-def _prompt_diskfull(output):
+def _prompt_diskfull(output, index=None):
     while True:
         print('')
+        if index is not None:
+            print('Current index in "{}" is: {}'.format(_jobfile, index))
         print(
             'Volume mounted to "{}" is full. Please mount a new volume, and press "c" to continue'.format(
                 filesystem.get_mount(output)
@@ -165,6 +216,18 @@ def _prompt_diskfull(output):
         elif command in ('q', 'Q'):
             print('Aborted by user')
             sys.exit(1)
+
+
+def write_copyfiles(filepath, copyfiles):
+    filedir = os.path.dirname(filepath)
+
+    if not os.path.isdir(filedir):
+        os.makedirs(filedir)
+
+    with open(filepath, 'w') as fd:
+        fd.write('[\n  ')
+        fd.write(',\n  '.join(json.dumps(copyfile) for copyfile in copyfiles))
+        fd.write('\n]\n')
 
 
 def list_copyfiles(srcpaths, output):
@@ -212,5 +275,5 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format='%(levelname)s| %(msg)s')
     if not os.path.isdir('/var/tmp/qtconfigs'):
         os.makedirs('/var/tmp/qtconfigs')
-    mvcopy(['~/.config/qutebrowser'], '/var/tmp/qtconfigs')
+    mvcopy_srcpaths(['~/.config/qutebrowser'], '/var/tmp/qtconfigs')
     #_prompt_diskfull('/home/will')
