@@ -33,6 +33,7 @@ if __name__ == '__main__':
         name='multivolumecopy',
         version=__version__,
         author='Will Pittman',
+		  author_email='willjpittman@gmail.com',
         license='MIT',
         packages=setuptools.find_packages(exclude=['tests/*']),
         entry_points={
