@@ -1,2 +1,5 @@
 0.0.1:
     - written
+0.1.0:
+    - response was not being decoded back to unicode from bytestring returned shell
+    - job now dumped to a jsonfile, can specify file and index to restart an interrupted job from midway through.

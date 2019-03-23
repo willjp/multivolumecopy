@@ -4,10 +4,9 @@ checks operating system running maya so adjustments can be made to paths and
 environment
 """
 # builtin
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 import argparse
+import logging
 import sys
 # package
 from multivolumecopy import mvcopy
@@ -19,12 +18,15 @@ class CommandlineInterface(object):
     def __init__(self):
         self.parser = argparse.ArgumentParser(
             description=('Simple Multi-Volume file copy tool. You will be prompted to replace device '
-                         'when the medium is full.')
+                         'when the medium is full. (ex: multivolumecopy /path/src -o /path/dst)')
         )
 
+        # new job
         self.parser.add_argument(
             'srcpaths', nargs='+', help='List of filepaths to copy'
         )
+
+        # continue job
         self.parser.add_argument(
             '-f', '--jobfile', help='Continue a pre-existing mvcopy job that was interrupted. (also see --start-index)',
             metavar='/path/to/mvcopy-jobdata.json'
@@ -34,16 +36,21 @@ class CommandlineInterface(object):
             metavar='533',
             type=int,
         )
+
+        # misc
         self.parser.add_argument(
-            '--padding', help='Room to leave on each backup disk before prompting for a new disk',
+            '--device-padding', help='Room to leave on each backup disk before prompting for a new disk',
             metavar='5M',
             default=None,
             type=str,
         )
-
         self.parser.add_argument(
             '-o', '--output', help='The path you\'d like to write backups to'
         )
+
+        # logging
+        self.parser.add_argument('-v', '--verbose', action='store_true', help='verbose logging')
+        self.parser.add_argument('-vv', '--very-verbose', action='store_true', help='very verbose logging')
 
     def parse_args(self):
         args = self.parser.parse_args()
@@ -57,6 +64,14 @@ class CommandlineInterface(object):
             print('No srcpaths or jobfile specified to copy')
             sys.exit(1)
 
+        # logging setup
+        log_level = logging.WARNING
+        if args.very_verbose:
+            log_level = logging.DEBUG
+        elif args.verbose:
+            log_level = logging.INFO
+        logging.basicConfig(level=log_level, format='%(levelname)s| %(msg)s')
+
         # begin copying
         common_kwargs = dict(
             output=args.output,
@@ -68,7 +83,7 @@ class CommandlineInterface(object):
                 print('Print jobfile specified, so srcpaths will be ignored: {}'.format(repr(args.srcpaths)))
             mvcopy.mvcopy_jobfile(args.jobfile, index=args.index, **common_kwargs)
         elif args.srcpaths:
-            mvcopy.movcopy_srcpaths(args.srcpaths, **common_kwargs)
+            mvcopy.mvcopy_srcpaths(args.srcpaths, **common_kwargs)
 
 
 if __name__ == '__main__':
