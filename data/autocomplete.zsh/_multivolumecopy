@@ -9,7 +9,12 @@ _arguments -C \
     "::next:_files" \
     {-h,--help}'[show help information]'   \
     {-o,--output}'[path backups are written to]' \
-    --padding'[room to leave on disk before prompting for new disk]'
+    {-i,--start-index}'[index to start copying from. Ignored if using srcpaths]' \
+    {-f,--jobfile}'[continue a pre-existing mvcopy job that was interrupted. (see also --start-index)]' \
+    {-v,--verbose}'[verbose logging]' \
+    {-vv,--very-verbose}'[very verbose logging]' \
+    --no-progress'[do not show progressbar]' \
+    --device-padding'[room to leave on disk before prompting for new disk]'
 }
 
-_wallmgr "$@"
+_multivolumecopy "$@"
