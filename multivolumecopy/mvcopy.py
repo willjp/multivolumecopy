@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 """
-Rsync wrapper to facilitate quick n' dirty multi-HDD backups of a file-server.
 """
 # builtin
 from __future__ import absolute_import

@@ -10,10 +10,10 @@ import setuptools
 
 __version__ = multivolumecopy.__version__
 
+
 if __version__.endswith(('a', 'b')):
-    raise RuntimeError(
-        'You are trying to install/release an alpha/beta version of software'
-    )
+    msg = 'You are trying to install/release an alpha/beta version of software'
+    raise RuntimeError(msg)
 
 
 def get_zsh_completionpath():
@@ -50,6 +50,6 @@ if __name__ == '__main__':
         tests_require=[
             'pytest',
             'pytest-runner',
-            'mock',
+            'mock<4',  # mock 4+ currently has invalid syntax for py27
         ],
     )

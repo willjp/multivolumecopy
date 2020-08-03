@@ -1,14 +1,10 @@
 #!/usr/bin/env python
-# builtin
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import os
-# package
-# external
 import mock
 import pytest
-# internal
 from multivolumecopy import mvcopy, filesystem
 
 
@@ -42,7 +38,7 @@ class Test_mvcopy(object):
             lastindexes=[2, 4],
             copyfiles=sample_copyfiles,
         )
-        assert result['prompt_diskfull_calls'] == [mock.call('/dst')]
+        assert result['prompt_diskfull_calls'] == [mock.call('/dst', 3)]
         assert result['copyfile_calls'] == [
             mock.call(src='/src/a.txt', dst='/dst/a.txt'),
             mock.call(src='/src/b.txt', dst='/dst/b.txt'),
@@ -79,7 +75,7 @@ class Test_mvcopy(object):
             with mock.patch('{}.filesystem'.format(ns)) as mock_filesystem:
                 with mock.patch('{}._get_volume_lastindex'.format(ns), side_effect=lastindexes):
                     with mock.patch('{}.list_copyfiles'.format(ns), return_value=copyfiles):
-                        mvcopy.mvcopy(
+                        mvcopy.mvcopy_srcpaths(
                             srcpaths=['/src'],
                             output='/dst',
                         )
@@ -203,7 +199,7 @@ class Test__volume_delete_extraneous(object):
             current_outputfiles=sample_copyfiles,
         )
         expected_deletes = [d['dst'] for d in sample_copyfiles[3:]]
-        assert delete_calls == [mock.call(fp) for fp in expected_deletes]
+        assert sorted(delete_calls) == sorted([mock.call(fp) for fp in expected_deletes])
 
     def test_empty_outdir(self):
         delete_calls = self.volume_delete_extraneous(
