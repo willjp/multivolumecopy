@@ -1,17 +1,11 @@
 #!/usr/bin/env python
+""" Commandline interface.
 """
-checks operating system running maya so adjustments can be made to paths and
-environment
-"""
-# builtin
 from __future__ import absolute_import, division, print_function
 import argparse
 import logging
 import sys
-# package
 from multivolumecopy import mvcopy
-# external
-# internal
 
 
 class CommandlineInterface(object):

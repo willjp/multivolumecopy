@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """
 """
-# builtin
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -9,9 +8,6 @@ import json
 import logging
 import os
 import sys
-# package
-# external
-# internal
 from multivolumecopy import filesystem
 
 

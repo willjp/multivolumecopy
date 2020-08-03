@@ -2,7 +2,6 @@
 """
 Tools for working with files/filesystem.
 """
-# builtin
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -10,9 +9,6 @@ import logging
 import os
 import re
 import shutil
-# package
-# external
-# internal
 
 
 logger = logging.getLogger(__name__)
