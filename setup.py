@@ -47,8 +47,9 @@ if __name__ == '__main__':
         setup_requires=[
             'setuptools',
         ],
-        test_requires=[
+        tests_require=[
             'pytest',
+            'pytest-runner',
             'mock',
         ],
     )
