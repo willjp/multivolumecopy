@@ -210,14 +210,12 @@ def _prompt_diskfull(output, index=None):
         print('')
         if index is not None:
             print('Current index in "{}" is: {}'.format(_jobfile, index))
-        print(
-            'Volume mounted to "{}" is full. Please mount a new volume, and press "c" to continue'.format(
-                filesystem.get_mount(output)
-            )
-        )
+        msg = 'Volume mounted to "{}" is full. Please mount a new volume, and press "c" to continue'\
+                  .format(filesystem.get_mount(output))
+        print(msg)
         print('(Or press "q" to abort)')
         print('')
-        command = str(input('> '))
+        command = _get_user_input('> ')
         if command in ('c', 'C'):
             return
         elif command in ('q', 'Q'):
@@ -347,6 +345,27 @@ def list_copyfiles(srcpaths, output):
                 })
 
     return copyfiles
+
+
+def _get_user_input(msg):
+    """ Request user input, convert reply to native string type.
+
+    Args:
+        msg (str):
+            Message you'd like to present at user-input prompt.
+
+    Returns:
+        str: characters typed by user.
+    """
+    if sys.version_info[0] < 3:
+        reply = raw_input(msg)
+        return reply.encode('utf-8')
+    else:
+        reply = input(msg)
+        if hasattr(reply, 'decode'):
+            return reply.decode('utf-8')
+        else:
+            return reply
 
 
 if __name__ == '__main__':

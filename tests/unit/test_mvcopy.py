@@ -5,6 +5,7 @@ from __future__ import print_function
 import os
 import mock
 import pytest
+import sys
 from multivolumecopy import mvcopy, filesystem
 
 
@@ -248,3 +249,28 @@ class Test__volume_delete_extraneous(object):
                     output='/dst',
                 )
                 return mock_remove.mock_calls
+
+
+class Test__get_user_input(object):
+    BYTES_CONSOLE_REPLY = 'abc'.encode('utf-8')
+
+    if sys.version_info[0] < 3:
+        UNICODE_CONSOLE_REPLY = 'abc'.decode('utf-8')
+    else:
+        UNICODE_CONSOLE_REPLY = 'abc'
+
+    def test_unicode_in_str_out(self):
+        with self.mock_input(self.UNICODE_CONSOLE_REPLY):
+            actual_reply = mvcopy._get_user_input('')
+        assert type(actual_reply) == str
+
+    def test_bytes_in_str_out(self):
+        with self.mock_input(self.BYTES_CONSOLE_REPLY):
+            actual_reply = mvcopy._get_user_input('')
+        assert type(actual_reply) == str
+
+    def mock_input(self, return_value):
+        if sys.version_info[0] < 3:
+            return mock.patch('__builtin__.raw_input', return_value=return_value)
+        else:
+            return mock.patch('builtins.input', return_value=return_value)
