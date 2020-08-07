@@ -13,29 +13,6 @@ if __version__.endswith(('a', 'b')):
     raise RuntimeError(msg)
 
 
-def get_zsh_completionpath():
-    paths = (
-        '/usr/local/share/zsh/functions/Completion/Unix',
-        '/usr/local/share/zsh/*/functions/Completion/Unix',
-        '/usr/share/zsh/functions/Completion/Unix',
-    )
-    for path in paths:
-        matches = glob.glob(path)
-        if not matches:
-            continue
-        if os.path.isdir(matches[0]):
-            return path[0]
-    msg = 'No fpath could be found for installation in: %s' % repr(paths)
-    print('[WARNING] unable to install zsh completion function')
-
-
-def get_data_files():
-    zsh_completionpath = get_zsh_completionpath()
-    if zsh_completionpath:
-        return [('{}/_multivolumecopy'.format(zsh_completionpath), ['data/autocomplete.zsh/_multivolumecopy'])]
-    return []
-
-
 if __name__ == '__main__':
     setuptools.setup(
         name='multivolumecopy',
@@ -49,7 +26,6 @@ if __name__ == '__main__':
                 'multivolumecopy=multivolumecopy.cli:CommandlineInterface.exec_',
             ],
         },
-        data_files=get_data_files(),
         setup_requires=[
             'setuptools',
         ],
