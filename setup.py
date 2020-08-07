@@ -38,7 +38,7 @@ if __name__ == '__main__':
         packages=setuptools.find_packages(exclude=['tests/*']),
         entry_points={
             'console_scripts': [
-                'multivolumecopy = multivolumecopy.cli:CommandlineInterface.show',
+                'multivolumecopy=multivolumecopy.cli:CommandlineInterface.show',
             ],
         },
         data_files=[

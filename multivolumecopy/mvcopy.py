@@ -98,6 +98,7 @@ def _mvcopy_files(copyfiles, output, device_padding=None, index=None, no_progres
 
     # copy files
     total = len(copyfiles)
+    lastindex = 0
     while index < len(copyfiles):
         lastindex = _get_volume_lastindex(index, output, copyfiles, device_padding)
         logger.info('Destination will hold {}/{}, files starting at {}'.format(
