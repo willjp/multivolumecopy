@@ -9,6 +9,11 @@ from multivolumecopy import mvcopy
 
 
 class CommandlineInterface(object):
+    @classmethod
+    def exec_(cls):
+        cli = CommandlineInterface()
+        cli.parse_args()
+
     def __init__(self):
         self.parser = argparse.ArgumentParser(
             description=('Simple Multi-Volume file copy tool. You will be prompted to replace device '
