@@ -152,6 +152,10 @@ class Disk:
         Filesystem.format_disk(self.path)
 
     def mount(self, location):
+        if platform.system() == 'FreeBSD':
+            cmds = ['sudo', 'mdconfig', '-a', '-t', 'vnode', self.path, '-u', '0']
+            subprocess.check_call(cmds, universal_newlines=True)
+
         cmds = ['sudo', 'mount', '-t', Filesystem.filesystem(), self.path, location]
         subprocess.check_call(cmds, universal_newlines=True)
         cmds = ['sudo', 'chmod', '-R', '777', location]
@@ -160,6 +164,10 @@ class Disk:
     def unmount(self):
         cmds = ['sudo', 'umount', '-f', self.path]
         subprocess.check_call(cmds, universal_newlines=True)
+
+        if platform.system() == 'FreeBSD':
+            cmds = ['sudo', 'mdconfig', '-d', '-u', '0']
+            subprocess.check_call(cmds, universal_newlines=True)
 
     def delete(self):
         os.remove(self.path)
