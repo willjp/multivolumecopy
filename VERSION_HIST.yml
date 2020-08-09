@@ -4,3 +4,10 @@
     - response was not being decoded back to unicode from bytestring returned shell
     - job now dumped to a jsonfile, can specify file and index to restart an interrupted job from midway through.
     - progressbar showing current device progress, and overall progress
+1.1.1:
+    - fixes issues related to unicode/bytestrings when reading user input from terminal
+x.X.x:
+    - fixes progress
+    - adds index info to progress
+    - abandons pytest-runner in favour of using tox/pytest directly
+
