@@ -18,7 +18,7 @@ if __name__ == '__main__':
         name='multivolumecopy',
         version=__version__,
         author='Will Pittman',
-		  author_email='willjpittman@gmail.com',
+        author_email='willjpittman@gmail.com',
         license='MIT',
         packages=setuptools.find_packages(exclude=['tests/*']),
         entry_points={
@@ -26,12 +26,5 @@ if __name__ == '__main__':
                 'multivolumecopy=multivolumecopy.cli:CommandlineInterface.exec_',
             ],
         },
-        setup_requires=[
-            'setuptools',
-        ],
-        tests_require=[
-            'pytest',
-            'pytest-runner',
-            'mock<4',  # mock 4+ currently has invalid syntax for py27
-        ],
+        setup_requires=['setuptools'],
     )
