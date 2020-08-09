@@ -8,6 +8,7 @@ REQUIREMENTS:
         sudo         # sudo
 
     FreeBSD:
+        # NOTE: TODO -- broken
         fusefs-ext2  # ext4
         sudo         # sudo
 
@@ -113,7 +114,7 @@ class Filesystem:
                 file representing a disk partition
         """
         filesystem = cls.filesystem()
-        if filesystem == 'ext4':
+        if filesystem in ['ext4', 'ext2fs']:
             cmds = ['mkfs.ext4', disk]
             subprocess.check_call(cmds, universal_newlines=True)
         else:
@@ -124,7 +125,7 @@ class Filesystem:
         """ Obtain filesystem for current platform.
         """
         filesystems = {
-            'FreeBSD': 'ext4',  # ufs dos not like formatting dd img
+            'FreeBSD': 'ext2fs',  # ufs dos not like formatting dd img
             'Linux': 'ext4',
         }
         platform_ = platform.system()
@@ -136,12 +137,28 @@ class Filesystem:
 class Disk:
     """ A disk with a capacity of 5M.
     """
+    FREEBSD_MDCONFIG_UNIT = 0
+
     def __init__(self, path):
         self._path = path
 
+        if platform.system() == 'FreeBSD':
+            self._device_path = '/dev/md{}'.format(self.FREEBSD_MDCONFIG_UNIT)
+        else:
+            self._device_path = path
+
     @property
     def path(self):
+        """ Path to the disk image.
+        """
         return self._path
+
+    @property
+    def device_path(self):
+        """ If platform disk img be bound to a virtual device,
+        that device is returned here. Otherwise, the disk image itself.
+        """
+        return self._device_path
 
     def create(self):
         """ Create a file to represent a disk partition.
@@ -154,21 +171,23 @@ class Disk:
 
     def mount(self, location):
         if platform.system() == 'FreeBSD':
-            cmds = ['sudo', 'mdconfig', '-a', '-t', 'vnode', self.path, '-u', '0']
+            cmds = ['sudo', 'mdconfig', '-a', '-t', 'vnode', '-f', self.path, '-u', str(self.FREEBSD_MDCONFIG_UNIT)]
             subprocess.check_call(cmds, universal_newlines=True)
 
-        cmds = ['sudo', 'mount', '-t', Filesystem.filesystem(), self.path, location]
+        cmds = ['sudo', 'mount', '-t', Filesystem.filesystem(), self.device_path, location]
         subprocess.check_call(cmds, universal_newlines=True)
+
         cmds = ['sudo', 'chmod', '-R', '777', location]
         subprocess.check_call(cmds, universal_newlines=True)
 
     def unmount(self):
-        cmds = ['sudo', 'umount', '-f', self.path]
-        subprocess.check_call(cmds, universal_newlines=True)
-
-        if platform.system() == 'FreeBSD':
-            cmds = ['sudo', 'mdconfig', '-d', '-u', '0']
+        try:
+            cmds = ['sudo', 'umount', '-f', self.device_path]
             subprocess.check_call(cmds, universal_newlines=True)
+        finally:
+            if platform.system() == 'FreeBSD':
+                cmds = ['sudo', 'mdconfig', '-d', '-u', '0']
+                subprocess.check_call(cmds, universal_newlines=True)
 
     def delete(self):
         os.remove(self.path)
