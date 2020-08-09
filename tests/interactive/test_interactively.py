@@ -2,7 +2,7 @@
 """ A quick/dirty interactive test to confirm everything is working.
 
 REQUIREMENTS:
-    Linux:  
+    Linux:
         e2fsprogs    # ext4
         coreutils    # dd, chmod
         sudo         # sudo
@@ -14,7 +14,7 @@ REQUIREMENTS:
 
 RUN:
       ::
-        
+
         python setup.py build
         python test/interactive/test_interactively.py
 
@@ -34,7 +34,7 @@ import sys
 
 
 class InteractiveTestWithDiskRequest:
-    """ Creates files/disks and runs a real copy 
+    """ Creates files/disks and runs a real copy
     including a single disk rollover (request for new disk).
 
     When a new disk is requested, you'll need to manually
@@ -62,6 +62,7 @@ class InteractiveTestWithDiskRequest:
     def perform(self):
         try:
             self._prepare()
+            print('\n\n')
             cmds = ['python', 'build/lib/multivolumecopy', '{}/files/'.format(self.root), '--output', self.mnt]
             subprocess.call(cmds, universal_newlines=True)
         finally:
@@ -175,7 +176,7 @@ class Disk:
 
 class File:
     """ A 1M file.
-    """ 
+    """
     def __init__(self, path):
         self._path = path
 

@@ -20,6 +20,7 @@ sample_copyfiles = [
 
 
 class Test_mvcopy(object):
+    @pytest.mark.focus
     def test_no_rollover_reqd(self):
         result = self.mvcopy(
             lastindexes=[1],
