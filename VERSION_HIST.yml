@@ -6,8 +6,11 @@
     - progressbar showing current device progress, and overall progress
 1.1.1:
     - fixes issues related to unicode/bytestrings when reading user input from terminal
-x.X.x:
-    - fixes progress
-    - adds index info to progress
+    - fixes device progress 
+    - progress flow 
+    - adds index to progress
     - abandons pytest-runner in favour of using tox/pytest directly
-
+x.X.x:
+    # fix for non-target files on device being deleted
+    # record index to file as completed in case of system crash
+    # fix or sidestep memory leak (shutil?)
