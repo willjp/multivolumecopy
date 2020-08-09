@@ -2,6 +2,15 @@
 Safety
 ======
 
+
+* [2020/08/09] on file copy error because disk is full,
+  prompt for disk rollover. (files sizes vary between filesystems,
+  especially if they are using compression)
+
+* [2020/08/09] files not being deleted from dst when used
+  on fileserver, but seems to be while testing interactively.
+  subdirectories maybe? identify and fix.
+
 * [2020/08/07] files submitted to srcpaths do not work 
   (either fix, or disallow)
 
