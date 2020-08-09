@@ -12,7 +12,8 @@ from multivolumecopy import filesystem
 
 
 logger = logging.getLogger(__name__)
-_jobfile = './mvcopy-jobdata.json'
+_jobfile = './.mvcopy-jobdata.json'
+_indexfile = './.mvcopy-index'
 
 
 def mvcopy_srcpaths(srcpaths, output, device_padding=None, no_progressbar=False):
@@ -112,9 +113,10 @@ def _mvcopy_files(copyfiles, output, device_padding=None, index=None, no_progres
             _update_copy_progressbar(index, total, firstindex, lastindex, copydata['src'], no_progressbar)
             filesystem.copyfile(src=copydata['src'], dst=copydata['dst'])
             filesystem.copyfilestat(src=copydata['src'], dst=copydata['dst'])
+            write_indexfile(_indexfile, index)
             index += 1
+        _update_copy_progressbar(index, total, firstindex, lastindex, copyfiles[index - 1]['src'], no_progressbar)
 
-        _update_copy_progressbar(index, total, firstindex, lastindex, copydata['src'], no_progressbar)
         firstindex = index
         if all([
             lastindex < len(copyfiles),
@@ -125,6 +127,8 @@ def _mvcopy_files(copyfiles, output, device_padding=None, index=None, no_progres
     # delete jobfile on completion
     if os.path.isfile(_jobfile):
         os.remove(_jobfile)
+    if os.path.isfile(_indexfile):
+        os.remove(_indexfile)
 
 
 def _get_volume_lastindex(index, output, copyfiles, device_padding=None):
@@ -245,12 +249,18 @@ def _update_copy_progressbar(index, total, firstindex, lastindex, srcfile, no_pr
     device_index = index - firstindex
     device_total = lastindex - firstindex
 
-    # firstindex > lastindex when updating total to 100%
-    # (progress is printed before AND after operation)
-    if firstindex <= lastindex:
-        device_progress = (device_index / device_total) * 100
+    if device_total == 0:
+        # device total is 0 if only a single file is being copied
+        device_total = 1
+
+    if (device_index - 1) < 0:
+        # firstindex > lastindex when updating total to 100%
+        # (progress is printed before AND after operation)
+        device_progress = 0
     else:
-        device_progress = 100.0
+        device_progress = (device_index / device_total) * 100
+    if device_progress > 100:
+        device_progress = 100
 
     completed_steps = int(device_progress / 4)  # 25 steps-per-progressbar
     uncompleted_steps = 25 - completed_steps
@@ -267,7 +277,7 @@ def _update_copy_progressbar(index, total, firstindex, lastindex, srcfile, no_pr
             total,
             round(total_progress, 2),
             # device
-            device_index if device_index < device_total else device_index - 1,
+            device_index if device_index <= device_total else device_index - 1,
             device_total,
             round(device_progress, 2),
             # progress
@@ -313,6 +323,8 @@ def _update_delete_progressbar(index, total, filepath, no_progressbar=False):
 
 
 def write_copyfiles(filepath, copyfiles):
+    """ Dumps files to be copied to jsonfile.
+    """
     filedir = os.path.dirname(filepath)
 
     if not os.path.isdir(filedir):
@@ -322,6 +334,13 @@ def write_copyfiles(filepath, copyfiles):
         fd.write('[\n  ')
         fd.write(',\n  '.join(json.dumps(copyfile) for copyfile in copyfiles))
         fd.write('\n]\n')
+
+
+def write_indexfile(filepath, index):
+    """ Dumps last completed index to file.
+    """
+    with open(filepath, 'w') as fd:
+        fd.write(str(index))
 
 
 def list_copyfiles(srcpaths, output):
@@ -361,6 +380,7 @@ def list_copyfiles(srcpaths, output):
                     'relpath':  relpath,
                     'bytes':    os.path.getsize(filepath),
                 })
+    copyfiles.sort(key=lambda x: x['src'])
 
     return copyfiles
 

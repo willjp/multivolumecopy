@@ -37,7 +37,15 @@ class Test_mvcopy(object):
     def test_disk_full_rollover(self):
         result = self.mvcopy(
             lastindexes=[2, 4],
-            copyfiles=sample_copyfiles,
+            copyfiles=[
+                # rollover 1
+                {'src': '/src/a.txt', 'dst': '/dst/a.txt', 'relpath': 'a.txt', 'bytes': 1000},
+                {'src': '/src/b.txt', 'dst': '/dst/b.txt', 'relpath': 'b.txt', 'bytes': 1000},
+                # rollover 2
+                {'src': '/src/c.txt', 'dst': '/dst/c.txt', 'relpath': 'c.txt', 'bytes': 1000},
+                {'src': '/src/d.txt', 'dst': '/dst/d.txt', 'relpath': 'd.txt', 'bytes': 1000},
+                {'src': '/src/e.txt', 'dst': '/dst/e.txt', 'relpath': 'e.txt', 'bytes': 1000},
+            ],
         )
         assert result['prompt_diskfull_calls'] == [mock.call('/dst', 3)]
         assert result['copyfile_calls'] == [
@@ -47,6 +55,17 @@ class Test_mvcopy(object):
             mock.call(src='/src/d.txt', dst='/dst/d.txt'),
             mock.call(src='/src/e.txt', dst='/dst/e.txt'),
         ]
+
+    def test_single_file_copy(self):
+        """ Look out for division by zero
+        """
+        result = self.mvcopy(
+            lastindexes=[0],
+            copyfiles=[
+                {'src': '/src/a.txt', 'dst': '/dst/a.txt', 'relpath': 'a.txt', 'bytes': 1024},
+            ]
+        )
+        assert result['copyfile_calls'] == [mock.call(src='/src/a.txt', dst='/dst/a.txt')]
 
     def mvcopy(self, lastindexes, copyfiles):
         """ Runs mvcopy() mocked, returns items to test.
@@ -111,8 +130,8 @@ class Test_list_copyfiles(object):
             dstdir='/tmp/dst',
         )
         assert result == [
-            {'src': '/tmp/src/A/a.txt', 'dst': '/tmp/dst/A/a.txt', 'relpath': 'A/a.txt', 'bytes': 1024},
             {'src': '/tmp/src/A/B/b.txt', 'dst': '/tmp/dst/A/B/b.txt', 'relpath': 'A/B/b.txt', 'bytes': 1024},
+            {'src': '/tmp/src/A/a.txt', 'dst': '/tmp/dst/A/a.txt', 'relpath': 'A/a.txt', 'bytes': 1024},
         ]
 
     def test_relative_srcpath(self):

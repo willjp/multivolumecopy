@@ -11,6 +11,7 @@
     - adds index to progress
     - abandons pytest-runner in favour of using tox/pytest directly
 x.X.x:
+    - record index to file as completed in case of system crash
+    - mvcopy-jobdata.json is now a dotfile
     # fix for non-target files on device being deleted
-    # record index to file as completed in case of system crash
     # fix or sidestep memory leak (shutil?)

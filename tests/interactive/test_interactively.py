@@ -58,7 +58,7 @@ class InteractiveTestWithDiskRequest:
         self.disk_2 = Disk('{}/disk2.img'.format(self.root))
 
         # 7x 1M files
-        self.files = [File('{}/files/{}'.format(self.root, i)) for i in range(7)]
+        self.files = [File('{}/files/{}'.format(self.root, i)) for i in range(9)]
 
     def perform(self):
         try:
