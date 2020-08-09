@@ -1,3 +1,10 @@
+Version Updates
+---------------
+
+This project uses semantic versioning.
+Update version in ``multivolumecopy.__init__.py`` ,
+and add summary of changes to ``VERSION_HIST.yml``
+
 
 Testing
 -------
