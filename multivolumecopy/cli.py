@@ -5,10 +5,9 @@ from __future__ import absolute_import, division, print_function
 import argparse
 import logging
 import sys
-from multivolumecopy import mvcopy
-from multivolumecopy.copyfile import copier
-from multivolumecopy.copyfile.targets import directorylistresolver, jobfileresolver
-from multivolumecopy.copyfile import copyoptions
+from multivolumecopy.resolvers import directorylistresolver, jobfileresolver
+from multivolumecopy import copyoptions
+from multivolumecopy.copiers import simplecopier
 
 
 class CommandlineInterface(object):
@@ -63,8 +62,14 @@ class CommandlineInterface(object):
         self._validate_args(args)
         self._setup_logging(args)
 
-        #self._start_legacy(args)
         self._start(args)
+
+    def _start(self, args):
+        options = self._get_copyoptions_from_args(args)
+        source = self._get_copysource_from_args(args, options)
+        copier_ = simplecopier.SimpleCopier(source, options)
+
+        copier_.start()
 
     def _validate_args(self, args):
         # validate arguments
@@ -85,13 +90,6 @@ class CommandlineInterface(object):
             log_level = logging.INFO
         logging.basicConfig(level=log_level, format='%(levelname)s| %(msg)s')
 
-    def _start(self, args):
-        options = self._get_copyoptions_from_args(args)
-        source = self._get_copysource_from_args(args, options)
-        copier_ = copier.FileCopier(source, options)
-
-        copier_.start()
-
     def _get_copyoptions_from_args(self, args):
         options = copyoptions.CopyOptions()
         options.output = args.output
@@ -105,19 +103,6 @@ class CommandlineInterface(object):
         if args.srcpaths:
             return directorylistresolver.DirectoryListResolver(args.srcpaths, options)
         raise NotImplementedError()
-
-    def _start_legacy(self, args):
-        common_kwargs = dict(
-            output=args.output,
-            device_padding=args.device_padding,
-            no_progressbar=args.no_progress,
-        )
-        if args.jobfile:
-            if args.srcpaths:
-                print('Print jobfile specified, so srcpaths will be ignored: {}'.format(repr(args.srcpaths)))
-            mvcopy.mvcopy_jobfile(args.jobfile, index=args.index, **common_kwargs)
-        elif args.srcpaths:
-            mvcopy.mvcopy_srcpaths(args.srcpaths, **common_kwargs)
 
 
 if __name__ == '__main__':

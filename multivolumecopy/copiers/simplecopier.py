@@ -1,5 +1,5 @@
-from multivolumecopy.copyfile import copyoptions
-from multivolumecopy import filesystem
+from multivolumecopy.copiers import copier
+from multivolumecopy import filesystem, copyoptions
 import json
 import logging
 import os
@@ -13,7 +13,14 @@ logger = logging.getLogger(__name__)
 #       LastIndexCalculator
 
 
-class FileCopier(object):
+class SimpleCopier(copier.Copier):
+    """ V1 copier.
+
+    .. warning::
+        Messy, needs to be split for SRP, memory issues with python-3.7.
+        This needs rewritten badly.
+
+    """
     def __init__(self, source, options=None):
         """
         Args:
@@ -26,36 +33,12 @@ class FileCopier(object):
             options (CopyOptions, None):
                 Options to use while performing copy
         """
-        self._source = source
-        self._options = options or copyoptions.CopyOptions()
-        super(FileCopier, self).__init__()
-
-    @property
-    def options(self):
-        """ The provided CopyOptions (output, padding, ...).
-        """
-        return self._options
+        super(SimpleCopier, self).__init__(source, options)
 
     def start(self):
         """ Copies files, prompting for new device when device is full.
-
-        Args:
-            copyfiles (list):
-                A list of dictionaries with information about files being copied.
-
-            output (str):
-                Directory files are being copied to.
-
-        Other Parameters:
-            device_padding (str, optional): ``(ex: '5G', '500M' )``
-                String indicating how much empty room you'd like to leave on the
-                device.
-
-            index (int, optional): ``(ex: 540)``
-                Index of the file you'd like to begin copying from
-                in `jobfile` .
         """
-        copyfiles = self._source.get_copyfiles()
+        copyfiles = self.source.get_copyfiles()
 
         # defaults
         index = self.options.start_index
@@ -233,12 +216,6 @@ class FileCopier(object):
         # write newline when job complete (so future \r prints get their own line)
         if progress >= 100:
             sys.stdout.write('\n')
-
-    def write_indexfile(self, index):
-        """ Dumps last completed index to file.
-        """
-        with open(self.options.indexfile, 'w') as fd:
-            fd.write(str(index))
 
     def _prompt_diskfull(self, index=None):
         while True:

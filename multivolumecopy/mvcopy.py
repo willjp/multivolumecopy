@@ -11,6 +11,10 @@ import sys
 from multivolumecopy import filesystem
 
 
+# ==============
+# !!DEPRECATED!!
+# ==============
+
 logger = logging.getLogger(__name__)
 _jobfile = './.mvcopy-jobdata.json'
 _indexfile = './.mvcopy-index'

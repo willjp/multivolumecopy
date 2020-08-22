@@ -1,4 +1,4 @@
-from multivolumecopy.copyfile.targets import resolver
+from multivolumecopy.resolvers import resolver
 import json
 
 
