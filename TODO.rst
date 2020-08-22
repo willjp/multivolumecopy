@@ -21,3 +21,30 @@ Safety
 
 * [2020/08/07] rewrite as queue/consumer so faster (accept num workers on cli)
 
+* [2020/08/22] _volume_delete_extraneous only deletes files under destdir.
+  It ignores files copied elsewhere on the drive. 
+
+  This is good, but volume capacity calculation should be
+  run following this operation, and use amount of space left
+  on disk at that point.
+
+* [2020/08/22] These methods need to be extracted into classes.
+  The whole thing needs to be restrured.
+
+* [2020/08/22] Reconciler method should be extracted, handling both identifiaction
+  and deletion of files. Optimizations can be made by:
+
+   (reconciliation)
+   1. determine total size of all present files not in total list of files
+   2. delete them
+   3. determine total size of destdir (after delete). This is your volume capacity.
+   4. `reduce/sum` over copyfiles until volume capacity reached. This is estimated last index (progress calculated based on this).
+   5. delete all files on drive, that come after that last index.
+
+   (other)
+   * we must keep a reference to our expected last index.
+     if we don't reach it, delete files later on the list (by earliest encountered)
+     in each loop until we run out of room.
+     (we need to make sure that 2x disks do not have different versions of the same file)
+
+

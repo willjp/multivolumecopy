@@ -187,7 +187,7 @@ class Test__get_volume_lastindex(object):
             (50,     3000,     0,     2),
         ]
     )
-    def test(self, devpadding, capacity, index, expected):
+    def test_output_is_device_root(self, devpadding, capacity, index, expected):
         """
 
         Args:
@@ -208,6 +208,11 @@ class Test__get_volume_lastindex(object):
                 device_padding=devpadding,
             )
             assert lastindex == expected
+
+    def test_output_is_subdirectory_on_partially_filled_device(self):
+        # calculation should factor in files on disk, but outside of target
+        # directory when deciding what to delete!
+        assert False
 
 
 class Test__volume_delete_extraneous(object):

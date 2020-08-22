@@ -6,3 +6,4 @@ dist/*
 *.egg*
 .tox/*
 mvcopy-jobdata.json
+.ropeproject/*
