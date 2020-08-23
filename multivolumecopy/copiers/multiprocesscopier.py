@@ -15,9 +15,6 @@ from multivolumecopy.reconcilers import deleteallreconciler, keepfilesreconciler
 logger = logging.getLogger(__name__)
 
 
-# TODO: MultiProcessCopier._started_filedata -> _started_indexes (no reason to keep second reference to dict)
-
-
 WINDOWS_DISKFULL_ERRNO = 39
 POSIX_DISKFULL_ERRNO = 28
 
@@ -70,15 +67,14 @@ class MultiProcessCopier(copier.Copier):
         self._copyfiles = []
         self._copied_indexes = []
         self._error_indexes = []
-        self._copied_files = 0
-        self._total_files = 0
-        self._started_filedata = []
+        self._started_indexes = []
 
     def start(self):
         """ Copies files, prompting for new device when device is full.
         """
         self._copyfiles = self.source.get_copyfiles()
-        self._total_files = len(self._copyfiles)
+
+
         self.write_jobfile(self._copyfiles)
 
         for copyfile in self._copyfiles:
@@ -104,12 +100,12 @@ class MultiProcessCopier(copier.Copier):
         self._evaluate_diskfull_check()
 
         if self.copy_finished():
-            print('Successfully Copied {} Files'.format(self._total_files))
+            print('Successfully Copied {} Files'.format(len(self._copyfiles)))
             return True
 
     def copy_finished(self):
         processed_files = len(self._copied_indexes) + len(self._error_indexes)
-        return processed_files == self._total_files
+        return processed_files == len(self._copyfiles)
 
     def _evaluate_queues(self):
         self._evaluate_started_queue()
@@ -120,7 +116,7 @@ class MultiProcessCopier(copier.Copier):
         while True:
             try:
                 data = self._started_queue.get(timeout=0)
-                self._started_filedata.append(data)
+                self._started_indexes.append(data['index'])
             except queue.Empty:
                 return
 
@@ -128,8 +124,7 @@ class MultiProcessCopier(copier.Copier):
         while True:
             try:
                 filedata = self._completed_queue.get(timeout=0)
-                self._try_remove_started_filedata_entry(filedata)
-                self._copied_files += 1
+                self._try_remove_started_index(filedata['index'])
                 self._copied_indexes.append(filedata['index'])
                 self._render_progress(filedata=filedata)
             except queue.Empty:
@@ -139,7 +134,7 @@ class MultiProcessCopier(copier.Copier):
         while True:
             try:
                 filedata = self._error_queue.get(timeout=0)
-                self._try_remove_started_filedata_entry(filedata)
+                self._try_remove_started_index(filedata['index'])
                 self._error_indexes.append(filedata['index'])
                 self._render_progress(filedata=filedata)
             except queue.Empty:
@@ -168,22 +163,20 @@ class MultiProcessCopier(copier.Copier):
     def _empty_and_requeue_started_copyfiles(self):
         """
         """
-        started_filedata = []
-        sorted_filedata = sorted(self._started_filedata, key=lambda x: x['index'])
-        while len(sorted_filedata) > 0:
-            filedata = sorted_filedata.pop(0)
-            self._started_filedata.remove(filedata)
-            started_filedata.append(filedata)
-            self._joblist.insert(0, filedata)
+        sorted_started_indexes = sorted(self._started_indexes)
+        requeued = 0
+        while len(self._started_indexes) > 0:
+            index = sorted_started_indexes.pop(0)
+            self._try_remove_started_index(index)
+            self._joblist.insert(0, self._copyfiles[index])
+            requeued += 1
 
-        if started_filedata:
+        if requeued:
             print('')
-            logger.info('{} files have been requeued'.format(len(started_filedata)))
-
-        return started_filedata
+            logger.info('{} files have been requeued'.format(requeued))
 
     def _render_progress(self, filedata=None):
-        msg = self._progress_formatter.format(self._copied_files, self._total_files, self._error_indexes, filedata)
+        msg = self._progress_formatter.format(len(self._copied_indexes), len(self._copyfiles), self._error_indexes, filedata)
         sys.stdout.write(msg)
 
     def _prompt_diskfull(self):
@@ -210,9 +203,9 @@ class MultiProcessCopier(copier.Copier):
                 print('Aborted by user')
                 sys.exit(1)
 
-    def _try_remove_started_filedata_entry(self, filedata):
+    def _try_remove_started_index(self, index):
         try:
-            self._started_filedata.remove(filedata)
+            self._started_indexes.remove(index)
         except(ValueError):
             pass
 
