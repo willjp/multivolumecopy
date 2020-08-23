@@ -276,6 +276,7 @@ class _MultiProcessCopierWorkerManager(object):
                 yield worker
             else:
                 self._workers.remove(worker)
+                worker.close()
 
     def build_workers(self):
         """ Builds workers until number of active workers matches `options.num_workers`
