@@ -59,7 +59,7 @@ class SimpleProgressFormatter(progressformatter.ProgressFormatter):
 
                 .. code-block:: python
 
-                    {"src": "/src/a.txt", "dst": "/dst/a.txt", "relpath": "a.txt", "bytes": 1000},
+                    {"src": "/src/a.txt", "dst": "/dst/a.txt", "relpath": "a.txt", "bytes": 1000, "index": 1},
 
         """
         fmt = self._format_options(index, lastindex_total, filedata)
