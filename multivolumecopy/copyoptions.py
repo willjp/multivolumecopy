@@ -13,8 +13,8 @@ class CopyOptions(object):
         self.show_progressbar = False
         self.jobfile = os.path.abspath('./.mvcopy-jobdata.json')
         self.indexfile = os.path.abspath('./.mvcopy-index')
-        #self.num_workers = multiprocessing.cpu_count()
-        self.num_workers = 1
+        self.max_worker_tasks = 50
+        self.num_workers = (multiprocessing.cpu_count() - 1) or 1
 
         # without defaults
         self.output = None

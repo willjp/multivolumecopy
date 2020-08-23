@@ -3,14 +3,13 @@
 import logging
 import multiprocessing
 import multiprocessing.managers
-import pprint
 import queue
 import sys
 from multivolumecopy import filesystem
 from multivolumecopy.copiers import copier
 from multivolumecopy.progress import simpleprogressformatter
 from multivolumecopy.prompts import commandlineprompt
-from multivolumecopy.reconcilers import simplereconciler, deleterreconciler
+from multivolumecopy.reconcilers import deleterreconciler
 
 
 logger = logging.getLogger(__name__)
@@ -201,7 +200,7 @@ class ProcessManager(object):
         """
         while True:
             if self.active_workers() < self.options.num_workers:
-                worker = MemSafeCopierWorker(self._queue, self._wip_queue, self._progress_queue, self._device_full_lock)
+                worker = MemSafeCopierWorker(self._queue, self._wip_queue, self._progress_queue, self._device_full_lock, maxtasks=self.options.max_worker_tasks)
                 self._workers.append(worker)
                 worker.start()
             else:
@@ -257,8 +256,8 @@ class MemSafeCopierWorker(multiprocessing.Process):
         self._maxtasks = maxtasks
 
     def run(self):
-        i = 0
-        while i < self._maxtasks:
+        loop_count = 0
+        while loop_count < self._maxtasks:
             # device lock being set also acts like a poison pill
             if self._device_full_lock.is_set():
                 logger.debug('Process Exit, device full')
@@ -289,4 +288,8 @@ class MemSafeCopierWorker(multiprocessing.Process):
                 self._device_full_lock.set()
                 return
 
+            # increment loop count, so we can kill worker, and release memory
+            loop_count += 1
+
+        logger.debug('Worker maxtasks reached. Exiting')
 
