@@ -47,4 +47,6 @@ Safety
      in each loop until we run out of room.
      (we need to make sure that 2x disks do not have different versions of the same file)
 
-
+* [2020/08/22] Consider emitting a unix signal, writing to a socket or something
+  when we are ready to switch the device. It would be good to automate this for tests,
+  and also for end-user automation.

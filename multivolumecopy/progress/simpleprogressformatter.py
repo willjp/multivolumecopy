@@ -19,10 +19,10 @@ class SimpleProgressFormatter(progressformatter.ProgressFormatter):
             total_completed_steps = 0
             total_remaining_steps = self.progress_chars
         else:
-            total_percent = index / lastindex_total
+            total_percent = (index / lastindex_total) * 100
             total_completed_steps = int(total_percent / 4)
             total_remaining_steps = int(self.progress_chars - total_completed_steps)
-        total_progressbar = '{}{}'.format(total_completed_steps * '#', total_remaining_steps * ' ')
+        total_progressbar = '{}{}'.format(('#' * total_completed_steps), (' ' * total_remaining_steps))
 
         # last_file
         if last_filedata:
@@ -42,7 +42,7 @@ class SimpleProgressFormatter(progressformatter.ProgressFormatter):
         if len(filepath) < max_chars:
             return filepath
         adjuster = -1 * max_chars
-        return filepath[adjuster:]
+        return '...' + filepath[adjuster:]
 
     def format(self, index, lastindex_total, filedata):
         """ Formats a progressbar based on `fmt` string.

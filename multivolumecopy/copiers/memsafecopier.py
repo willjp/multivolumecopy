@@ -71,6 +71,7 @@ class MemSafeCopier(copier.Copier):
                 self._evaluate_wip_queue()
                 self._evaluate_progress_queue()
                 self._evaluate_diskfull_check()
+
                 if self._copied_files == self._total_files:
                     print('Successfully Copied {} Files'.format(self._total_files))
                     self._manager.stop()
@@ -173,13 +174,15 @@ class ProcessManager(object):
         """ Builds workers until number of active workers matches `options.num_workers`
         """
         while True:
-            active_workers = len(list(filter(lambda x: x.is_alive(), self._workers)))
-            if active_workers < self.options.num_workers:
+            if self.active_workers() < self.options.num_workers:
                 worker = MemSafeCopierWorker(self._queue, self._wip_queue, self._progress_queue, self._device_full_lock)
                 self._workers.append(worker)
                 worker.start()
             else:
                 break
+
+    def active_workers(self):
+        return len(list(filter(lambda x: x.is_alive(), self.__iter__())))
 
     def stop(self):
         logger.debug('Stopping Workers...')
@@ -219,17 +222,20 @@ class MemSafeCopierWorker(multiprocessing.Process):
     """
     def __init__(self, queue, wip_queue, progress_queue, device_full_lock, maxtasks=50, *args, **kwargs):
         super(MemSafeCopierWorker, self).__init__(*args, **kwargs)
+
         self._queue = queue
         self._wip_queue = wip_queue
-        self._progress_queue = queue
-        self._maxtasks = maxtasks
+        self._progress_queue = progress_queue
         self._device_full_lock = device_full_lock
+
+        self._maxtasks = maxtasks
 
     def run(self):
         i = 0
         while i < self._maxtasks:
             # device lock being set also acts like a poison pill
             if self._device_full_lock.set():
+                logger.debug('Process Exit, device full')
                 return
 
             data = self._queue.get()
@@ -248,5 +254,6 @@ class MemSafeCopierWorker(multiprocessing.Process):
                 self._progress_queue.put(data)
             except(OSError):
                 self._device_full_lock.set()
+                return
 
 
