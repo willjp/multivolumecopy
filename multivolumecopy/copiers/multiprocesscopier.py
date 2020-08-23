@@ -15,6 +15,9 @@ from multivolumecopy.reconcilers import deleteallreconciler, keepfilesreconciler
 logger = logging.getLogger(__name__)
 
 
+# TODO: MultiProcessCopier._started_filedata -> _started_indexes (no reason to keep second reference to dict)
+
+
 WINDOWS_DISKFULL_ERRNO = 39
 POSIX_DISKFULL_ERRNO = 28
 
