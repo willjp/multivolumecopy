@@ -34,7 +34,7 @@ class SimpleProgressFormatter(progressformatter.ProgressFormatter):
                     'total_files': lastindex_total,
                     'total_percent': round(total_percent, 2),
                     'total_progressbar': total_progressbar,
-                    'last_file_full': last_srcfile,
+                    'last_file_full': self._abbreviated_file(last_srcfile, self.max_file_chars),
                     'last_file_abbrev': self._abbreviated_file(last_srcfile, self.max_file_chars)}
         return fmt_data
 

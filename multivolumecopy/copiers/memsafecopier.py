@@ -123,7 +123,7 @@ class MemSafeCopier(copier.Copier):
         msg = self._progress_formatter.format(self._copied_files, self._total_files, filedata)
         sys.stdout.write(msg)
 
-    def _prompt_diskfull(self, requeue_indexes):
+    def _prompt_diskfull(self, requeue_filedata):
         """ Loop request to continue/decline until valid response from user.
 
         Args:
@@ -133,14 +133,15 @@ class MemSafeCopier(copier.Copier):
         while True:
             print('')
 
-            if requeue_indexes:
-                print('The following files have been requeued: {}\n'.format(pprint.pprint(requeue_indexes)))
+            if requeue_filedata:
+                logger.info('{} files have been requeued'.format(len(requeue_filedata)))
 
-            print('Next index "{}": {}\n'.format(self._copied_files, self.options.jobfile))
+            logger.info('Next index "{}": {}\n'.format(self._copied_files, self.options.jobfile))
 
-            print('Mounted Device is full. '
-                  'Please mount a new device, and press "c" to continue. "{}"'
-                  .format(filesystem.get_mount(self.options.output)))
+            print('\nMounted Device is full. '
+                  'Please mount a new device, and press "c" to continue. \n'
+                  '  ({}/{}, buildfile: "{}")\n'
+                  .format(self._copied_files, self._total_files, filesystem.get_mount(self.options.output)))
 
             print('(Or press "q" to abort)')
             print('')
