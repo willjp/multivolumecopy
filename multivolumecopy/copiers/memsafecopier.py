@@ -41,8 +41,13 @@ class MemSafeCopier(copier.Copier):
         """
         super(MemSafeCopier, self).__init__(source, options)
 
+        # NOTE: queueing using multiprocessing.Manager.list() to approximate LIFO queue.
+        #       (for backup-file reconciliation, order must remain consistent in queue)
+        #       (LIFO allows us to re-enqeueue failed copies due to diskfull error)
+
         # queues/locks
-        self._queue = multiprocessing.Queue()
+        self._mpmanager = multiprocessing.Manager()
+        self._queue = self._mpmanager.list()
         self._progress_queue = multiprocessing.Queue()
         self._wip_queue = multiprocessing.Queue()
         self._device_full_lock = multiprocessing.Event()
@@ -51,7 +56,6 @@ class MemSafeCopier(copier.Copier):
         self._prompt = commandlineprompt.CommandlinePrompt()
         self._manager = ProcessManager(self._queue, self._wip_queue, self._progress_queue, self._device_full_lock, options)
         self._progress_formatter = simpleprogressformatter.SimpleProgressFormatter()
-        #self._reconciler = deleteallreconciler.DeleteAllReconciler(source, options)
         self._reconciler = keepfilesreconciler.KeepFilesReconciler(source, options)
 
         # internal data
@@ -67,7 +71,7 @@ class MemSafeCopier(copier.Copier):
         self._copyfiles = self.source.get_copyfiles()
         self._total_files = len(self._copyfiles)
         for copyfile in self._copyfiles:
-            self._queue.put(copyfile)
+            self._queue.append(copyfile)
 
         try:
             while True:
@@ -138,10 +142,12 @@ class MemSafeCopier(copier.Copier):
         """
         """
         wip_filedata = []
-        while len(self._wip_filedata) > 0:
-            filedata = self._wip_filedata.pop(0)
+        sorted_filedata = sorted(self._wip_filedata, key=lambda x: x['index'])
+        while len(sorted_filedata) > 0:
+            filedata = sorted_filedata.pop(0)
+            self._wip_filedata.remove(filedata)
             wip_filedata.append(filedata)
-            self._queue.put(filedata)
+            self._queue.insert(0, filedata)
 
         if wip_filedata:
             print('')
@@ -216,7 +222,7 @@ class ProcessManager(object):
         # worker can only process a single queue item at a time.
         # please wait afterwards.
         for i in range(self.options.num_workers):
-            self._queue.put(None)
+            self._queue.insert(0, None)
 
     def terminate(self):
         logger.debug('Force Terminating Workers...')
@@ -265,7 +271,11 @@ class MemSafeCopierWorker(multiprocessing.Process):
                 logger.debug('Process Exit, device full')
                 return
 
-            data = self._queue.get()
+            # try retrieving next item from list, loop if onavailable
+            try:
+                data = self._queue.pop(0)
+            except IndexError:
+                continue
 
             # `None` is poison pill, causing exit
             if data is None:
@@ -294,4 +304,5 @@ class MemSafeCopierWorker(multiprocessing.Process):
             loop_count += 1
 
         logger.debug('Worker maxtasks reached. Exiting')
+
 
