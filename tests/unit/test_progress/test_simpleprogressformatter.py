@@ -15,7 +15,9 @@ class TestSimpleProgressFormatter:
         'total_percent',
         'total_progressbar',
         'last_file_full',
-        'last_file_abbrev'])
+        'last_file_abbrev',
+        'num_errors',
+    ])
     def test_supported_types(self, key, valid_filedata):
         # verify it runs without exception.
         fmt = '{' + key + '}'
