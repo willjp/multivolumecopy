@@ -86,7 +86,7 @@ class SimpleCopier(copier.Copier):
                 return index
 
             filesystem.copyfilestat(src=copydata['src'], dst=copydata['dst'])
-            self.write_indexfile(index)
+            self._write_indexfile(index)
             index += 1
         self._update_copy_progressbar(index, total, device_firstindex, last, copyfiles[index - 1]['src'])
         # -1, since last iteration is either a fail, or one above last.
@@ -301,4 +301,9 @@ class SimpleCopier(copier.Copier):
 
         return lastindex
 
+    def _write_indexfile(self, index):
+        """ Dumps last completed index to file.
+        """
+        with open(self.options.indexfile, 'w') as fd:
+            fd.write(str(index))
 

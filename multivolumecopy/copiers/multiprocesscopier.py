@@ -79,27 +79,33 @@ class MultiProcessCopier(copier.Copier):
         """
         self._copyfiles = self.source.get_copyfiles()
         self._total_files = len(self._copyfiles)
+        self.write_jobfile(self._copyfiles)
+
         for copyfile in self._copyfiles:
             self._joblist.append(copyfile)
 
         try:
             while True:
-                # render 0% progress
-                self._render_progress()
-
-                # workers periodically die to release their memory. build as-needed
-                self._manager.build_workers()
-
-                self._evaluate_queues()
-                self._evaluate_diskfull_check()
-
-                if self.copy_finished():
-                    print('Successfully Copied {} Files'.format(self._total_files))
+                if self._eventloop_iteration():
                     return
 
         finally:
             self._manager.stop()
             self._manager.join(timeout=3000)
+
+    def _eventloop_iteration(self):
+        # render 0% progress
+        self._render_progress()
+
+        # workers periodically die to release their memory. build as-needed
+        self._manager.build_workers()
+
+        self._evaluate_queues()
+        self._evaluate_diskfull_check()
+
+        if self.copy_finished():
+            print('Successfully Copied {} Files'.format(self._total_files))
+            return True
 
     def copy_finished(self):
         processed_files = len(self._copied_indexes) + len(self._error_indexes)

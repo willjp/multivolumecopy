@@ -1,4 +1,6 @@
+import json
 import abc
+import os
 from multivolumecopy import copyoptions
 
 
@@ -35,15 +37,29 @@ class Copier(object):
         """
         return self._source
 
-
     def start(self):
         """ Copies files, prompting for new device when device is full.
         """
         raise NotImplementedError()
 
-    def write_indexfile(self, index):
-        """ Dumps last completed index to file.
-        """
-        with open(self.options.indexfile, 'w') as fd:
-            fd.write(str(index))
+    def write_jobfile(self, copyfiles):
+        with open(self.options.jobfile, 'w') as fd:
+            fd.write(json.dumps(copyfiles, indent=2))
+
+    def remove_jobfile(self):
+        if os.path.isfile(self.options.jobfile):
+            os.remove(self.options.jobfile)
+
+    def create_progressfile(self):
+        pass
+
+    def create_errorfile(self):
+        pass
+
+    def append_progressfile(self):
+        pass
+
+    def append_errorfile(self):
+        pass
+
 
