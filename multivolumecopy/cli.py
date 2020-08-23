@@ -67,8 +67,8 @@ class CommandlineInterface(object):
     def _start(self, args):
         options = self._get_copyoptions_from_args(args)
         source = self._get_copysource_from_args(args, options)
-        #copier_ = simplecopier.SimpleCopier(source, options)
-        copier_ = memsafecopier.MemSafeCopier(source, options)
+        copier_ = simplecopier.SimpleCopier(source, options)
+        #copier_ = memsafecopier.MemSafeCopier(source, options)
 
         copier_.start()
 

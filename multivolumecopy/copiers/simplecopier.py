@@ -73,7 +73,13 @@ class SimpleCopier(copier.Copier):
         while index <= last:
             copydata = copyfiles[index]
             self._update_copy_progressbar(index, total, device_firstindex, last, copydata['src'])
-            filesystem.copyfile(src=copydata['src'], dst=copydata['dst'])
+
+            # if copy fails, repeat it for next device
+            try:
+                filesystem.copyfile(src=copydata['src'], dst=copydata['dst'])
+            except(OSError):
+                return index
+
             filesystem.copyfilestat(src=copydata['src'], dst=copydata['dst'])
             self.write_indexfile(index)
             index += 1
