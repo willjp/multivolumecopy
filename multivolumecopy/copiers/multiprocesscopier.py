@@ -49,6 +49,7 @@ class MultiProcessCopier(copier.Copier):
         self._mpmanager = multiprocessing.Manager()
         self._joblist = self._mpmanager.list()
         self._completed_queue = multiprocessing.Queue()
+        self._error_queue = multiprocessing.Queue()
         self._started_queue = multiprocessing.Queue()
         self._device_full_lock = multiprocessing.Event()
 
@@ -61,6 +62,7 @@ class MultiProcessCopier(copier.Copier):
         # internal data
         self._copyfiles = []
         self._copied_indexes = []
+        self._error_indexes = []
         self._copied_files = 0
         self._total_files = 0
         self._started_filedata = []
@@ -111,9 +113,19 @@ class MultiProcessCopier(copier.Copier):
         while True:
             try:
                 filedata = self._completed_queue.get(timeout=0)
-                self._started_filedata.remove(filedata)
+                self._remove_started_filedata_entry(filedata)
                 self._copied_files += 1
                 self._copied_indexes.append(filedata['index'])
+                self._render_progress(filedata=filedata)
+            except queue.Empty:
+                return
+
+    def _evaluate_error_queue(self):
+        while True:
+            try:
+                filedata = self._error_queue.get(timeout=0)
+                self._remove_started_filedata_entry(filedata)
+                self._error_indexes.append(filedata['index'])
                 self._render_progress(filedata=filedata)
             except queue.Empty:
                 return
@@ -183,15 +195,22 @@ class MultiProcessCopier(copier.Copier):
                 print('Aborted by user')
                 sys.exit(1)
 
+    def _remove_started_filedata_entry(self, filedata):
+        try:
+            self._started_filedata.remove(filedata)
+        except(ValueError):
+            pass
+
 
 class _MultiProcessCopierWorkerManager(object):
     """ Manages worker processes.
     """
-    def __init__(self, joblist, started_queue, completed_queue, device_full_lock, options):
+    def __init__(self, joblist, started_queue, completed_queue, error_queue, device_full_lock, options):
         self._workers = []
         self._joblist = joblist
         self._completed_queue = completed_queue
         self._started_queue = started_queue
+        self._error_queue = error_queue
 
         self._device_full_lock = device_full_lock
         self._options = options
@@ -215,7 +234,7 @@ class _MultiProcessCopierWorkerManager(object):
         """
         while True:
             if self.active_workers() < self.options.num_workers:
-                worker = _MultiProcessCopierWorker(self._joblist, self._started_queue, self._completed_queue, self._device_full_lock, maxtasks=self.options.max_worker_tasks)
+                worker = _MultiProcessCopierWorker(self._joblist, self._started_queue, self._completed_queue, self._error_queue, self._device_full_lock, maxtasks=self.options.max_worker_tasks)
                 self._workers.append(worker)
                 worker.start()
             else:
@@ -250,12 +269,13 @@ class _MultiProcessCopierWorkerManager(object):
 class _MultiProcessCopierWorker(multiprocessing.Process):
     """ Processes queue items (copy files) forever until poison pill is received.
     """
-    def __init__(self, joblist, started_queue, completed_queue, device_full_event, maxtasks=50, *args, **kwargs):
+    def __init__(self, joblist, started_queue, completed_queue, error_queue, device_full_event, maxtasks=50, *args, **kwargs):
         super(_MultiProcessCopierWorker, self).__init__(*args, **kwargs)
 
         self._joblist = joblist
         self._started_queue = started_queue
         self._completed_queue = completed_queue
+        self._error_queue = error_queue
         self._device_full_event = device_full_event
 
         self._maxtasks = maxtasks
@@ -288,6 +308,7 @@ class _MultiProcessCopierWorker(multiprocessing.Process):
                 self._completed_queue.put(data)
             except(OSError) as exc:
                 if not self._exception_indicates_device_full(exc):
+                    self._error_queue.put(data)
                     raise
                 self._device_full_event.set()
                 return

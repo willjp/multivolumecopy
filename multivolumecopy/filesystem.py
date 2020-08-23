@@ -187,8 +187,10 @@ def copyfile(src, dst, reraise=True, log_errors=True):
     # make directories, and copy file
     try:
         dstdir = os.path.dirname(dst)
-        if not os.path.isdir(dstdir):
+        try:
             os.makedirs(dstdir)
+        except(FileExistsError):
+            pass
         logger.debug('copying file: "{}" to "{}"'.format(src, dst))
         shutil.copyfile(src, dst)
         return True
