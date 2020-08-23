@@ -104,6 +104,7 @@ class MultiProcessCopier(copier.Copier):
 
     def _evaluate_queues(self):
         self._evaluate_started_queue()
+        self._evaluate_error_queue()
         self._evaluate_completed_queue()
 
     def _evaluate_started_queue(self):

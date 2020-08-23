@@ -57,3 +57,7 @@ Safety
   when we are ready to switch the device. It would be good to automate this for tests,
   and also for end-user automation.
 
+* [2020/08/23] re-add jobfile! This is very useful!
+
+* [2020/08/23] re-add indexfile(s)! This is very useful!
+
