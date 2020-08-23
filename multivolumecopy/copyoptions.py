@@ -30,7 +30,8 @@ class CopyOptions(object):
 
         # maximum copy operations a worker can live through.
         # (afterwards it's process is restarted to free up memory)
-        self.max_worker_tasks = 50
+        # (this adds up quickly, watch your process in top/taskmanager)
+        self.max_worker_tasks = 5
 
         # desired number of worker processes to execute copies
         self.num_workers = (multiprocessing.cpu_count() - 1) or 1
