@@ -142,7 +142,7 @@ def files_different(file_a, file_b, mtime=True, size=True, checksum=False):
     return all(checks)
 
 
-def copyfile(src, dst):
+def copyfile(src, dst, reraise=True, log_errors=True):
     """ Copies a single file, if it needs copying.
 
     Args:
@@ -168,8 +168,11 @@ def copyfile(src, dst):
         logger.debug('copying file: "{}" to "{}"'.format(src, dst))
         shutil.copyfile(src, dst)
         return True
-    except(Exception):
-        logger.error('Unable to copy "{}" to "{}"'.format(src, dst))
+    except(OSError):
+        if log_errors:
+            logger.error('Unable to copy "{}" to "{}"'.format(src, dst))
+        if reraise:
+            raise
 
     return False
 
