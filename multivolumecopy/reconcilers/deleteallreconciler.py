@@ -8,12 +8,12 @@ from multivolumecopy.reconcilers import reconciler
 logger = logging.getLogger(__name__)
 
 
-class DeleterReconciler(reconciler.Reconciler):
+class DeleteAllReconciler(reconciler.Reconciler):
     """ Simplest possible reconciler. Deletes all files from dst.
     (everything will be recopied every time).
     """
     def __init__(self, source, options):
-        super(DeleterReconciler, self).__init__(source, options)
+        super(DeleteAllReconciler, self).__init__(source, options)
 
     def reconcile(self, copyfiles, copied_indexes):
         # delete files

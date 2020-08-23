@@ -9,7 +9,7 @@ from multivolumecopy import filesystem
 from multivolumecopy.copiers import copier
 from multivolumecopy.progress import simpleprogressformatter
 from multivolumecopy.prompts import commandlineprompt
-from multivolumecopy.reconcilers import deleterreconciler
+from multivolumecopy.reconcilers import deleteallreconciler, keepfilesreconciler
 
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,8 @@ class MemSafeCopier(copier.Copier):
         self._prompt = commandlineprompt.CommandlinePrompt()
         self._manager = ProcessManager(self._queue, self._wip_queue, self._progress_queue, self._device_full_lock, options)
         self._progress_formatter = simpleprogressformatter.SimpleProgressFormatter()
-        self._reconciler = deleterreconciler.DeleterReconciler(source, options)
+        #self._reconciler = deleteallreconciler.DeleteAllReconciler(source, options)
+        self._reconciler = keepfilesreconciler.KeepFilesReconciler(source, options)
 
         # internal data
         self._copyfiles = []
@@ -128,6 +129,7 @@ class MemSafeCopier(copier.Copier):
 
             # retrieve/requeue wip files, and prompt user to switch devices
             self._empty_and_requeue_wip_copyfiles()
+            # TODO: verify no extra files on disk (if reconciliation was inaccurate due to compression etc)
             self._prompt_diskfull()
             self._reconciler.reconcile(self._copyfiles, self._copied_indexes)
             self._device_full_lock.clear()

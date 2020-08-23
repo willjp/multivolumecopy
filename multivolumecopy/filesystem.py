@@ -62,7 +62,7 @@ def volume_capacity(output):
 
     return avail_bytes
 
-
+# TODO DELETE ME
 def backup_bytes(output):
     """ Obtains the total size occupied by the files under provided directory `output` .
 
@@ -81,6 +81,30 @@ def backup_bytes(output):
     return backup_bytes
 
 
+def directory_size(directory):
+    """ Returns total size of all files in directory in bytes.
+    """
+    # get total size occupied by the current output files
+    total_bytes = 0
+    for (root, dirnames, filenames) in os.walk(directory):
+        for dirname in dirnames:
+            dirpath = '{}/{}'.format(root, dirname)
+            if os.path.islink(dirpath):
+                total_bytes += os.lstat(dirpath).st_size
+            else:
+                total_bytes += os.path.getsize(dirpath)
+
+        for filename in filenames:
+            filepath = '{}/{}'.format(root, filename)
+            if os.path.islink(dirpath):
+                total_bytes += os.lstat(filepath).st_size
+            else:
+                total_bytes += os.path.getsize(filepath)
+
+    return total_bytes
+
+
+# TODO DELETE ME
 def avail_bytes_for_backup(output):
     """ Determines how much room is available for the backup, disregarding size of files in backup-dir (in bytes).
 
