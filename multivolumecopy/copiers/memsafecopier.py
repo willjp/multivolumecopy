@@ -16,6 +16,10 @@ from multivolumecopy.reconcilers import simplereconciler, deleterreconciler
 logger = logging.getLogger(__name__)
 
 
+WINDOWS_DISKFULL_ERRNO = 39
+POSIX_DISKFULL_ERRNO = 28
+
+
 class MemSafeCopier(copier.Copier):
     """
 
@@ -256,7 +260,7 @@ class MemSafeCopierWorker(multiprocessing.Process):
         i = 0
         while i < self._maxtasks:
             # device lock being set also acts like a poison pill
-            if self._device_full_lock.set():
+            if self._device_full_lock.is_set():
                 logger.debug('Process Exit, device full')
                 return
 
@@ -274,7 +278,14 @@ class MemSafeCopierWorker(multiprocessing.Process):
                 filesystem.copyfile(src=data['src'], dst=data['dst'], reraise=True, log_errors=False)
                 filesystem.copyfilestat(src=data['src'], dst=data['dst'])
                 self._progress_queue.put(data)
-            except(OSError):
+            except(OSError) as exc:
+                if sys.platform.startswith('win'):
+                    if exc.winerror != WINDOWS_DISKFULL_ERRNO:
+                        raise
+                else:
+                    if exc.errno != POSIX_DISKFULL_ERRNO:
+                        raise
+
                 self._device_full_lock.set()
                 return
 
