@@ -9,6 +9,7 @@ from multivolumecopy import filesystem
 from multivolumecopy.copiers import copier
 from multivolumecopy.progress import simpleprogressformatter
 from multivolumecopy.prompts import commandlineprompt
+from multivolumecopy.reconcilers import simplereconciler
 
 
 logger = logging.getLogger(__name__)
@@ -46,8 +47,10 @@ class MemSafeCopier(copier.Copier):
         self._prompt = commandlineprompt.CommandlinePrompt()
         self._manager = ProcessManager(self._queue, self._wip_queue, self._progress_queue, self._device_full_lock, options)
         self._progress_formatter = simpleprogressformatter.SimpleProgressFormatter()
+        self._reconciler = simplereconciler.SimpleReconciler(source, options)
 
         # internal data
+        self._copyfiles = []
         self._copied_files = 0
         self._total_files = 0
         self._wip_filedata = []
@@ -55,9 +58,9 @@ class MemSafeCopier(copier.Copier):
     def start(self):
         """ Copies files, prompting for new device when device is full.
         """
-        copyfiles = self.source.get_copyfiles()
-        self._total_files = len(copyfiles)
-        for copyfile in copyfiles:
+        self._copyfiles = self.source.get_copyfiles()
+        self._total_files = len(self._copyfiles)
+        for copyfile in self._copyfiles:
             self._queue.put(copyfile)
 
         try:
@@ -108,6 +111,7 @@ class MemSafeCopier(copier.Copier):
             # retrieve/requeue wip files, and prompt user to switch devices
             indexes = self._empty_and_requeue_wip_copyfiles()
             self._prompt_diskfull(indexes)
+            self._reconciler.reconcile(self._copied_files, self._copyfiles)
             self._device_full_lock.clear()
 
     def _empty_and_requeue_wip_copyfiles(self):
