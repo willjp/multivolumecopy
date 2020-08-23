@@ -169,6 +169,8 @@ def copyfile(src, dst, reraise=True, log_errors=True):
         shutil.copyfile(src, dst)
         return True
     except(OSError):
+        if os.path.isfile(dst):
+            os.remove(dst)
         if log_errors:
             logger.error('Unable to copy "{}" to "{}"'.format(src, dst))
         if reraise:
