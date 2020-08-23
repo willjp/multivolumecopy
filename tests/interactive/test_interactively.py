@@ -35,6 +35,10 @@ import logging
 import sys
 
 
+NUM_FILES_COPIED = 9
+#NUM_FILES_COPIED = 30
+
+
 class InteractiveTestWithDiskRequest:
     """ Creates files/disks and runs a real copy
     including a single disk rollover (request for new disk).
@@ -59,7 +63,7 @@ class InteractiveTestWithDiskRequest:
         self.disk_2 = Disk('{}/disk2.img'.format(self.root))
 
         # 7x 1M files
-        self.files = [File('{}/files/{}'.format(self.root, i)) for i in range(9)]
+        self.files = [File('{}/files/{}'.format(self.root, i)) for i in range(NUM_FILES_COPIED)]
 
     def perform(self):
         try:
@@ -215,6 +219,10 @@ class File:
 
 if __name__ == '__main__':
     # pass additional flags, like '-vv' and they will be repeated to executable.
+    #import objgraph
+    #objgraph.show_growth(limit=5)
     test = InteractiveTestWithDiskRequest()
     test.perform()
+    #objgraph.show_growth(limit=5)
+
 
