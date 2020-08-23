@@ -12,11 +12,11 @@ class JobFileResolver(resolver.Resolver):
         .. code-block:: json
 
             [
-              {"src": "/src/a.txt", "dst": "/dst/a.txt", "relpath": "a.txt", "bytes": 1000},
-              {"src": "/src/b.txt", "dst": "/dst/b.txt", "relpath": "b.txt", "bytes": 1000},
-              {"src": "/src/c.txt", "dst": "/dst/c.txt", "relpath": "c.txt", "bytes": 1000},
-              {"src": "/src/d.txt", "dst": "/dst/d.txt", "relpath": "d.txt", "bytes": 1000},
-              {"src": "/src/e.txt", "dst": "/dst/e.txt", "relpath": "e.txt", "bytes": 1000}
+                {"src": "/src/a.txt", "dst": "/dst/a.txt", "relpath": "a.txt", "bytes": 1000, "index": 0},
+                {"src": "/src/b.txt", "dst": "/dst/b.txt", "relpath": "b.txt", "bytes": 1000, "index": 1},
+                {"src": "/src/c.txt", "dst": "/dst/c.txt", "relpath": "c.txt", "bytes": 1000, "index": 2},
+                {"src": "/src/d.txt", "dst": "/dst/d.txt", "relpath": "d.txt", "bytes": 1000, "index": 3},
+                {"src": "/src/e.txt", "dst": "/dst/e.txt", "relpath": "e.txt", "bytes": 1000, "index": 4}
             ]
 
     """

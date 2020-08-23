@@ -38,13 +38,13 @@ class DirectoryListResolver(resolver.Resolver):
                         'src': '/src/path',
                         'dst': '/dst/path',
                         'bytes': 1024,
+                        'index': 0,
                     },
                     ...
                 ]
 
         """
         copyfiles = []  # [{'src': '/src/path', 'dst':'/dst/patht', 'bytes':1024}]
-
         for srcpath in srcpaths:
             srcpath = os.path.abspath(srcpath)
 
@@ -58,7 +58,13 @@ class DirectoryListResolver(resolver.Resolver):
                         'relpath':  relpath,
                         'bytes':    os.path.getsize(filepath),
                     })
+
+        # sort alphabetically by src
         copyfiles.sort(key=lambda x: x['src'])
+
+        # add index
+        for i in range(len(copyfiles)):
+            copyfiles[i]['index'] = i
 
         return copyfiles
 

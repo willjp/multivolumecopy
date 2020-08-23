@@ -31,6 +31,7 @@ import os
 import platform
 import shutil
 import subprocess
+import logging
 import sys
 
 
@@ -64,7 +65,8 @@ class InteractiveTestWithDiskRequest:
         try:
             self._prepare()
             print('\n\n')
-            cmds = ['python', 'build/lib/multivolumecopy', '{}/files/'.format(self.root), '--output', self.mnt]
+            cli_args = sys.argv.copy()[1:]
+            cmds = ['python', 'build/lib/multivolumecopy', '{}/files/'.format(self.root), '--output', self.mnt] + cli_args
             subprocess.call(cmds, universal_newlines=True)
         finally:
             self._cleanup()
@@ -212,6 +214,7 @@ class File:
 
 
 if __name__ == '__main__':
+    # pass additional flags, like '-vv' and they will be repeated to executable.
     test = InteractiveTestWithDiskRequest()
     test.perform()
 

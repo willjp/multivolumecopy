@@ -15,12 +15,8 @@ class Reconciler(object):
     def options(self):
         return self._options
 
-    def reconcile(self, first, last):
+    def reconcile(self, copyfiles, copied_indexes):
         """
-
-        Args:
-            first (int): index
-            last (int): index
         """
         raise NotImplemented()
 

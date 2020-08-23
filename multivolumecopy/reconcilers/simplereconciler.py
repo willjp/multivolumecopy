@@ -41,7 +41,9 @@ class SimpleReconciler(reconciler.Reconciler):
 
         return lastindex
 
-    def reconcile(self, index, copyfiles):
+    def reconcile(self, copyfiles, copied_indexes):
+        # NOTE: this is broken/innaccurate. just leave it, replacing.
+        index = copied_index[-1]
         lastindex = self.estimate_lastindex(index, copyfiles)
 
         # get a list of all dstfiles that will be copied to this volume

@@ -10,7 +10,7 @@ from multivolumecopy import filesystem
 from multivolumecopy.copiers import copier
 from multivolumecopy.progress import simpleprogressformatter
 from multivolumecopy.prompts import commandlineprompt
-from multivolumecopy.reconcilers import simplereconciler
+from multivolumecopy.reconcilers import simplereconciler, deleterreconciler
 
 
 logger = logging.getLogger(__name__)
@@ -48,10 +48,11 @@ class MemSafeCopier(copier.Copier):
         self._prompt = commandlineprompt.CommandlinePrompt()
         self._manager = ProcessManager(self._queue, self._wip_queue, self._progress_queue, self._device_full_lock, options)
         self._progress_formatter = simpleprogressformatter.SimpleProgressFormatter()
-        self._reconciler = simplereconciler.SimpleReconciler(source, options)
+        self._reconciler = deleterreconciler.DeleterReconciler(source, options)
 
         # internal data
         self._copyfiles = []
+        self._copied_indexes = []
         self._copied_files = 0
         self._total_files = 0
         self._wip_filedata = []
@@ -102,7 +103,9 @@ class MemSafeCopier(copier.Copier):
         while True:
             try:
                 filedata = self._progress_queue.get(timeout=0)
+                self._wip_filedata.remove(filedata)
                 self._copied_files += 1
+                self._copied_indexes.append(filedata['index'])
                 self._render_progress(filedata=filedata)
             except queue.Empty:
                 return
@@ -121,9 +124,9 @@ class MemSafeCopier(copier.Copier):
                 return
 
             # retrieve/requeue wip files, and prompt user to switch devices
-            indexes = self._empty_and_requeue_wip_copyfiles()
-            self._prompt_diskfull(indexes)
-            self._reconciler.reconcile(self._copied_files, self._copyfiles)
+            self._empty_and_requeue_wip_copyfiles()
+            self._prompt_diskfull()
+            self._reconciler.reconcile(self._copyfiles, self._copied_indexes)
             self._device_full_lock.clear()
 
     def _empty_and_requeue_wip_copyfiles(self):
@@ -134,13 +137,18 @@ class MemSafeCopier(copier.Copier):
             filedata = self._wip_filedata.pop(0)
             wip_filedata.append(filedata)
             self._queue.put(filedata)
+
+        if wip_filedata:
+            print('')
+            logger.info('{} files have been requeued'.format(len(wip_filedata)))
+
         return wip_filedata
 
     def _render_progress(self, filedata=None):
         msg = self._progress_formatter.format(self._copied_files, self._total_files, filedata)
         sys.stdout.write(msg)
 
-    def _prompt_diskfull(self, requeue_filedata):
+    def _prompt_diskfull(self):
         """ Loop request to continue/decline until valid response from user.
 
         Args:
@@ -148,17 +156,10 @@ class MemSafeCopier(copier.Copier):
                 the tasks that will be requeued.
         """
         while True:
-            print('')
-
-            if requeue_filedata:
-                logger.info('{} files have been requeued'.format(len(requeue_filedata)))
-
-            logger.info('Next index "{}": {}\n'.format(self._copied_files, self.options.jobfile))
-
             print('\nMounted Device is full. '
                   'Please mount a new device, and press "c" to continue. \n'
-                  '  ({}/{}, buildfile: "{}")\n'
-                  .format(self._copied_files, self._total_files, filesystem.get_mount(self.options.output)))
+                  '  (output: "{}")\n'
+                  .format(filesystem.get_mount(self.options.output)))
 
             print('(Or press "q" to abort)')
             print('')
@@ -261,12 +262,12 @@ class MemSafeCopierWorker(multiprocessing.Process):
 
             data = self._queue.get()
 
-            # inform wip queue that job started
-            self._wip_queue.put(data)
-
             # `None` is poison pill, causing exit
             if data is None:
                 return
+
+            # inform wip queue that job started
+            self._wip_queue.put(data)
 
             # otherwise data is a single copyfile dict.
             try:
