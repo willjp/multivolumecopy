@@ -61,3 +61,8 @@ Safety
 
 * [2020/08/23] re-add indexfile(s)! This is very useful!
 
+* [2020/08/23] reconciliation alone consumes lots of ram.
+  it may be prudent to also use the producer/consumer pattern for
+  deleting files
+
+
