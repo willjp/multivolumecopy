@@ -6,6 +6,9 @@ class Resolver(object):
     """
     __metaclass__ = abc.ABCMeta
 
+    def __init__(self, options):
+        self.options = options
+
     def get_copyfiles(self):
         raise NotImplementedError()
 

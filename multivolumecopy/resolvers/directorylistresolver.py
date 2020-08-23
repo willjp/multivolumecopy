@@ -12,9 +12,8 @@ class DirectoryListResolver(resolver.Resolver):
             srcpaths (list): ``(ex: ['/mnt/movies', '/mnt/music', ...])``
                 A list of directories that you'd like to backup.
         """
-        super(DirectoryListResolver, self).__init__()
+        super(DirectoryListResolver, self).__init__(options)
         self._directories = directories
-        self._options = options
 
     def get_copyfiles(self):
         srcpaths = sorted([os.path.expanduser(p) for p in self._directories])
@@ -54,7 +53,7 @@ class DirectoryListResolver(resolver.Resolver):
                     relpath = filepath[len(srcpath) + 1:]
                     copyfiles.append({
                         'src':      filepath,
-                        'dst':      os.path.abspath('{}/{}'.format(self._options.output, relpath)),
+                        'dst':      os.path.abspath('{}/{}'.format(self.options.output, relpath)),
                         'relpath':  relpath,
                         'bytes':    os.path.getsize(filepath),
                     })
