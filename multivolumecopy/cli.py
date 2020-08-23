@@ -7,7 +7,7 @@ import logging
 import sys
 from multivolumecopy.resolvers import directorylistresolver, jobfileresolver
 from multivolumecopy import copyoptions
-from multivolumecopy.copiers import simplecopier, memsafecopier
+from multivolumecopy.copiers import simplecopier, multiprocesscopier
 
 
 class CommandlineInterface(object):
@@ -68,7 +68,7 @@ class CommandlineInterface(object):
         options = self._get_copyoptions_from_args(args)
         source = self._get_copysource_from_args(args, options)
         #copier_ = simplecopier.SimpleCopier(source, options)
-        copier_ = memsafecopier.MemSafeCopier(source, options)
+        copier_ = multiprocesscopier.MultiProcessCopier(source, options)
 
         copier_.start()
 
