@@ -2,6 +2,7 @@
 """
 import logging
 import multiprocessing
+import multiprocessing.managers
 import pprint
 import queue
 import sys
@@ -71,19 +72,23 @@ class MemSafeCopier(copier.Copier):
                 # workers periodically die to release their memory. build as-needed
                 self._manager.build_workers()
 
-                self._evaluate_wip_queue()
-                self._evaluate_progress_queue()
+                self._evaluate_queues()
                 self._evaluate_diskfull_check()
 
-                if self._copied_files == self._total_files:
+                if self.copy_finished():
                     print('Successfully Copied {} Files'.format(self._total_files))
-                    self._manager.stop()
-                    self._manager.join()
                     return
 
         finally:
             self._manager.stop()
             self._manager.join(timeout=3000)
+
+    def copy_finished(self):
+        return self._copied_files == self._total_files
+
+    def _evaluate_queues(self):
+        self._evaluate_wip_queue()
+        self._evaluate_progress_queue()
 
     def _evaluate_wip_queue(self):
         while True:
@@ -107,6 +112,13 @@ class MemSafeCopier(copier.Copier):
             # request stop, wait for all workers to finish current file
             self._manager.stop()
             self._manager.join()
+
+            # copy operation may finish before we have updated screen/counters
+            self._evaluate_queues()
+
+            # now that workers are stopped, check again we aren't done.
+            if self.copy_finished():
+                return
 
             # retrieve/requeue wip files, and prompt user to switch devices
             indexes = self._empty_and_requeue_wip_copyfiles()
@@ -158,6 +170,11 @@ class MemSafeCopier(copier.Copier):
             if command in ('q', 'Q'):
                 print('Aborted by user')
                 sys.exit(1)
+
+
+class QueueManager(multiprocessing.managers.BaseManager):
+    pass
+QueueManager.register('LifoQueue', queue.LifoQueue)
 
 
 class ProcessManager(object):
