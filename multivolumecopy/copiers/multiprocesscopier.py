@@ -69,39 +69,78 @@ class MultiProcessCopier(copier.Copier):
         self._error_indexes = []
         self._started_indexes = []
 
-    def start(self):
+    def start(self, device_start_index=None, start_index=None):
         """ Copies files, prompting for new device when device is full.
+
+        Example:
+            ::
+
+                 (HDD-1)       (HDD-2)
+               +---------+   +---------+
+               |0  .. 100|   |101.. 250|    device_start_index (101)
+               |         |   |         |       HDD-1 files do not belong on HDD-2
+               |         |   |         |       0-100 will be deleted in reconciliation
+               +---------+   +---------+       (but not 101-219)
+
+               |----------------->220       start_index
+                                               indicates where we start copying
+                                               files from. We assume 101-219 are
+                                               already present on disk.
+
+        Args:
+            device_start_index (int, optional):
+                Determines the first index that should be copied to the device.
+                (affects files that get deleted during reconciliation before backup)
+
+            start_index (int, optional):
+                Determines which files get queued for copying.
+                Does not affect reconcliation.
         """
+        # where to copy from
+        start_index = start_index or device_start_index or 0
+
         self._copyfiles = self.source.get_copyfiles()
-
-
+        self._setup_copied_indexes(device_start_index)
         self.write_jobfile(self._copyfiles)
 
-        for copyfile in self._copyfiles:
+        # only queue copyfiles after startindex
+        for copyfile in self._copyfiles[start_index:]:
             self._joblist.append(copyfile)
 
+        # before we start, we reconcile using the `device_start_index`
+        # then adjust copied_indexes to match `start_index` so that
+        # `copy_finished` works.
+        self._reconciler.reconcile(self._copyfiles, self._copied_indexes)
+        self._setup_copied_indexes(start_index)
+
+        # begin eventloop
+        self._mainloop()
+
+    def _mainloop(self):
         try:
             while True:
-                if self._eventloop_iteration():
-                    return
+                # render 0% progress
+                self._render_progress()
+
+                # workers periodically die to release their memory. build as-needed
+                self._manager.build_workers()
+
+                self._evaluate_queues()
+                self._evaluate_diskfull_check()
+
+                if self.copy_finished():
+                    print('Successfully Copied {} Files'.format(len(self._copyfiles)))
+                    return True
 
         finally:
             self._manager.stop()
             self._manager.join(timeout=3000)
 
-    def _eventloop_iteration(self):
-        # render 0% progress
-        self._render_progress()
-
-        # workers periodically die to release their memory. build as-needed
-        self._manager.build_workers()
-
-        self._evaluate_queues()
-        self._evaluate_diskfull_check()
-
-        if self.copy_finished():
-            print('Successfully Copied {} Files'.format(len(self._copyfiles)))
-            return True
+    def _setup_copied_indexes(self, device_start_index):
+        # affects which files get deleted during reconciliation.
+        if not device_start_index:
+            return
+        self._copied_indexes = [x['index'] for x in self._copyfiles[:device_start_index]]
 
     def copy_finished(self):
         processed_files = len(self._copied_indexes) + len(self._error_indexes)
@@ -159,6 +198,7 @@ class MultiProcessCopier(copier.Copier):
             self._prompt_diskfull()
             self._reconciler.reconcile(self._copyfiles, self._copied_indexes)
             self._device_full_lock.clear()
+            return 0
 
     def _empty_and_requeue_started_copyfiles(self):
         """

@@ -29,11 +29,24 @@ class CommandlineInterface(object):
 
         # continue job
         self.parser.add_argument(
-            '-f', '--jobfile', help='Continue a pre-existing mvcopy job that was interrupted. (also see --start-index)',
+            '-f', '--jobfile', help='Continue a pre-existing mvcopy job that was interrupted. (also see --device-startindex and --start-index)',
             metavar='/path/to/mvcopy-jobdata.json'
         )
+        # TODO: indicate 'volume start' in addition to 'index' so we can
+        #       continue a failed copy that was cancelled midway.
+
         self.parser.add_argument(
-            '-i', '--start-index', help='Index you\'d like to begin copying from. Ignored if using srcpaths.',
+            '-i', '--device-startindex',
+            help=('Choose index that corresponds to start of device. '
+                  'Affects backup reconciliation (merge/delete), and where we start copying files'),
+            metavar='200',
+            type=int,
+        )
+        self.parser.add_argument(
+            '-si', '--select-index',
+            help=('[DANGEROUS] assume all indexes between --device-index and this index '
+                  'have already been copied. In other words, start copying at X, and do not '
+                  'confirm anything before it exists. (useful when resuming failed/cancelled backup mid-disk)'),
             metavar='533',
             type=int,
         )
@@ -67,10 +80,9 @@ class CommandlineInterface(object):
     def _start(self, args):
         options = self._get_copyoptions_from_args(args)
         source = self._get_copysource_from_args(args, options)
-        #copier_ = simplecopier.SimpleCopier(source, options)
         copier_ = multiprocesscopier.MultiProcessCopier(source, options)
 
-        copier_.start()
+        copier_.start(args.device_startindex, args.select_index)
 
     def _validate_args(self, args):
         # validate arguments

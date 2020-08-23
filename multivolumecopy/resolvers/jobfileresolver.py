@@ -24,7 +24,7 @@ class JobFileResolver(resolver.Resolver):
         super(JobFileResolver, self).__init__()
         self._filepath = filepath
 
-    def get_copyfiles(self):
+    def get_copyfiles(self, device_start_index=None, start_index=None):
         with open(self._filepath, 'r') as fd:
             copyfiles = json.loads(fd.read())
         return copyfiles

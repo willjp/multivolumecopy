@@ -9,6 +9,6 @@ class Resolver(object):
     def __init__(self, options):
         self.options = options
 
-    def get_copyfiles(self):
+    def get_copyfiles(self, device_start_index=None, start_index=None):
         raise NotImplementedError()
 

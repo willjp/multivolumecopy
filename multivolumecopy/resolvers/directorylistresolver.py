@@ -15,9 +15,16 @@ class DirectoryListResolver(resolver.Resolver):
         super(DirectoryListResolver, self).__init__(options)
         self._directories = directories
 
-    def get_copyfiles(self):
+    def get_copyfiles(self, device_start_index=None):
         srcpaths = sorted([os.path.expanduser(p) for p in self._directories])
         copyfiles = self._list_copyfiles(srcpaths)
+
+        # affects reconciliation and files to be copied.
+        # determines when we start counting files that need to be
+        # copied to this device.
+        if device_start_index:
+            copyfiles = copyfiles[device_start_index:]
+
         return copyfiles
 
     def _list_copyfiles(self, srcpaths):
