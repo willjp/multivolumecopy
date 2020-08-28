@@ -1,4 +1,5 @@
 import logging
+import select
 import multiprocessing
 import multiprocessing.managers
 import queue
@@ -7,6 +8,7 @@ from multivolumecopy import filesystem
 from multivolumecopy.copiers import copier
 from multivolumecopy.progress import lineformatter
 from multivolumecopy.prompts import commandlineprompt
+from multivolumecopy.commands import interpreter
 from multivolumecopy.reconcilers import keepfilesreconciler
 
 
@@ -52,6 +54,7 @@ class MultiProcessCopier(copier.Copier):
 
         # components
         self._prompt = commandlineprompt.CommandlinePrompt()
+        self._interpreter = interpreter.Interpreter()
         self._manager = _MultiProcessCopierWorkerManager(self._joblist,
                                                          self._started_queue,
                                                          self._completed_queue,
@@ -118,6 +121,7 @@ class MultiProcessCopier(copier.Copier):
             while True:
                 # render 0% progress
                 self._render_progress()
+                self._interpreter.eval_user_commands()
 
                 # workers periodically die to release their memory. build as-needed
                 self._manager.build_workers()
@@ -337,6 +341,9 @@ class _MultiProcessCopierWorker(multiprocessing.Process):
     def run(self):
         loop_count = 0
         while loop_count < self._maxtasks:
+            import time
+            time.sleep(4)
+
             # device lock being set also acts like a poison pill
             if self._device_full_event.is_set():
                 logger.debug('Process Exit, device full')
