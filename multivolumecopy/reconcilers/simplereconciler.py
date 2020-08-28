@@ -18,8 +18,8 @@ class SimpleReconciler(reconciler.Reconciler):
         This is the simplest resolver, but it is flawed. Filesystems may use compression
         on one side, but not the other resulting in dramatic differences in sizes.
     """
-    def __init__(self, source, options):
-        super(SimpleReconciler, self).__init__(source, options)
+    def __init__(self, copyfiles, options):
+        super(SimpleReconciler, self).__init__(copyfiles, options)
 
     def estimate_lastindex(self, index, copyfiles):
         capacity = filesystem.avail_bytes_for_backup(self.options.output)

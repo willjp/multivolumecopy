@@ -3,13 +3,13 @@ import os
 
 
 class DirectoryListResolver(resolver.Resolver):
-    """ Read copyfile src/dst determined by a list of source directories,
-    and a single output dir.
+    """ Determine files to copy by recursing through a list of directories.
     """
     def __init__(self, directories, options):
-        """
+        """ Constructor.
+
         Args:
-            srcpaths (list): ``(ex: ['/mnt/movies', '/mnt/music', ...])``
+            directories (list): ``(ex: ['/mnt/movies', '/mnt/music', ...])``
                 A list of directories that you'd like to backup.
         """
         super(DirectoryListResolver, self).__init__(options)

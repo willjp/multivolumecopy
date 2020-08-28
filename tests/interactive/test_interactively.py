@@ -213,8 +213,9 @@ class File:
         return self._path
 
     def create(self):
-        cmds = ['dd', 'if=/dev/zero', 'of={}'.format(self.path), 'bs=1M', 'count=1']
-        subprocess.check_call(cmds, universal_newlines=True)
+        if not os.path.isfile(self.path):
+            cmds = ['dd', 'if=/dev/zero', 'of={}'.format(self.path), 'bs=1M', 'count=1']
+            subprocess.check_call(cmds, universal_newlines=True)
 
 
 if __name__ == '__main__':

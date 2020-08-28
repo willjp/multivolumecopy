@@ -8,12 +8,37 @@ class KeepFilesReconciler(reconciler.Reconciler):
     of the copy job with identical modified-at/size metadata.
 
     Notes:
-        * assumes queue order matches copyfiles list.
+        * assumes queue order matches resolver list.
     """
     def __init__(self, source, options):
+        """ Constructor.
+
+        Args:
+            source (resolver.Resolver):
+                CopySource object, determines files to be copied.
+
+            options (copyoptions.CopyOptions):
+                Options to use while performing copy
+        """
         super(KeepFilesReconciler, self).__init__(source, options)
 
     def reconcile(self, copyfiles, copied_indexes):
+        """
+        Args:
+            copyfiles (list):
+                List of a dictionaries. One dict per-file containins
+                path/size info.
+
+                .. code-block:: python
+
+                    [
+                        {'src': '/s/a/b.txt', 'dst': '/z/a/b.txt', 'relpath': 'a/', 'bytes': 1024},
+                        ...
+                    ]
+
+            copied_indexes (list):
+                List of indexes that have already been copied from provided `copyfiles` .
+        """
         self._remove_unrelated_or_copied_paths(copyfiles, copied_indexes)
         self._remove_copypaths_that_wont_fit(copyfiles, copied_indexes)
 

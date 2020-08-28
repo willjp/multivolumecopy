@@ -7,7 +7,7 @@ import queue
 import sys
 from multivolumecopy import filesystem
 from multivolumecopy.copiers import copier
-from multivolumecopy.progress import simpleprogressformatter
+from multivolumecopy.progress import lineformatter
 from multivolumecopy.prompts import commandlineprompt
 from multivolumecopy.reconcilers import deleteallreconciler, keepfilesreconciler
 
@@ -27,10 +27,10 @@ class MultiProcessCopier(copier.Copier):
           that are easier to clean up .
     """
 
-    def __init__(self, source, options=None):
+    def __init__(self, resolver, options=None):
         """
         Args:
-            source (resolver.Resolver):
+            resolver (resolver.Resolver):
                 CopySource object, determines files to be copied.
 
             output (str): ``(ex: '/mnt/backup' )``
@@ -39,7 +39,7 @@ class MultiProcessCopier(copier.Copier):
             options (CopyOptions, None):
                 Options to use while performing copy
         """
-        super(MultiProcessCopier, self).__init__(source, options)
+        super(MultiProcessCopier, self).__init__(resolver, options)
 
         # NOTE: queueing using multiprocessing.Manager.list() to approximate LIFO queue.
         #       (for backup-file reconciliation, order must remain consistent in queue)
@@ -60,8 +60,8 @@ class MultiProcessCopier(copier.Copier):
                                                          self._completed_queue,
                                                          self._error_queue,
                                                          self._device_full_lock, options)
-        self._progress_formatter = simpleprogressformatter.SimpleProgressFormatter()
-        self._reconciler = keepfilesreconciler.KeepFilesReconciler(source, options)
+        self._progress_formatter = lineformatter.LineFormatter()
+        self._reconciler = keepfilesreconciler.KeepFilesReconciler(resolver, options)
 
         # internal data
         self._copyfiles = []
@@ -195,6 +195,7 @@ class MultiProcessCopier(copier.Copier):
             # retrieve/requeue wip files, and prompt user to switch devices
             self._empty_and_requeue_started_copyfiles()
             # TODO: verify no extra files on disk (if reconciliation was inaccurate due to compression etc)
+            # TODO: should be able to just re-use reconcile() and check freed space.
             self._prompt_diskfull()
             self._reconciler.reconcile(self._copyfiles, self._copied_indexes)
             self._device_full_lock.clear()
@@ -283,7 +284,12 @@ class _MultiProcessCopierWorkerManager(object):
         """
         while True:
             if self.active_workers() < self.options.num_workers:
-                worker = _MultiProcessCopierWorker(self._joblist, self._started_queue, self._completed_queue, self._error_queue, self._device_full_lock, maxtasks=self.options.max_worker_tasks)
+                worker = _MultiProcessCopierWorker(self._joblist,
+                                                   self._started_queue,
+                                                   self._completed_queue,
+                                                   self._error_queue,
+                                                   self._device_full_lock,
+                                                   maxtasks=self.options.max_worker_tasks)
                 self._workers.append(worker)
                 worker.start()
             else:

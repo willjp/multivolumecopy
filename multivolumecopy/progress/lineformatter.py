@@ -1,30 +1,49 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from multivolumecopy.progress import progressformatter
+from multivolumecopy.progress import textprogressbar
 
 
-class SimpleProgressFormatter(progressformatter.ProgressFormatter):
+class LineFormatter(object):
+    """ Formats a line with progress info.
+    """
     def __init__(self, fmt=None):
+        """ Constructor.
+
+        Args:
+            fmt (str, optional): ``(ex:  'Total {total_copied}/{total_files} [{total_progressbar}]' )``
+                Determines infomation that will appear on the statusline.
+        """
         self.fmt = fmt or ('(Total: {total_copied}/{total_files} {total_percent}%)'
                            '(Errors: {num_errors}) '
                            '[{total_progressbar}]  {last_file_abbrev} ')
+
+        # number of characters shown in filename preview
         self.max_file_chars = 50
-        self.progress_chars = 25
-        self.progress_multiplier = int(100 / self.progress_chars)
+
+        self._progressbar = textprogressbar.TextProgressBar()
 
     def _format_options(self, index, lastindex_total, error_indexes, last_filedata):
-        # total relative data
-        if lastindex_total == 0:
-            total_percent = 0.0
-            total_completed_steps = 0
-            total_remaining_steps = self.progress_chars
-        else:
-            total_percent = (index / lastindex_total) * 100
-            total_completed_steps = int(total_percent / 4)
-            total_remaining_steps = int(self.progress_chars - total_completed_steps)
-        total_progressbar = '{}{}'.format(('#' * total_completed_steps), (' ' * total_remaining_steps))
+        """
+        Args:
+            index (int):
+                Index of last completed file in list of files.
 
+            lastindex_total (int):
+                The total number of files in this copy operation
+                (unrelated to last index that will fit on currently mounted device)
+
+            error_indexes (list):
+                list of indexes of files that were unable to be copied.
+
+            last_filedata (dict):
+                dictionary with info about the last file that was successfully copied.
+
+                .. code-block:: python
+
+                    {'
+
+        """
         # last_file
         if last_filedata:
             last_srcfile = last_filedata.get('src', '')
@@ -33,8 +52,8 @@ class SimpleProgressFormatter(progressformatter.ProgressFormatter):
 
         fmt_data = {'total_copied': index,
                     'total_files': lastindex_total,
-                    'total_percent': round(total_percent, 2),
-                    'total_progressbar': total_progressbar,
+                    'total_percent': round(self._progressbar.percent, 2),
+                    'total_progressbar': self._progressbar.format(),
                     'last_file_full': self._abbreviated_file(last_srcfile, self.max_file_chars),
                     'last_file_abbrev': self._abbreviated_file(last_srcfile, self.max_file_chars),
                     'num_errors': len(error_indexes)}
