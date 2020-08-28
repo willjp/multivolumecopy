@@ -9,8 +9,9 @@ _arguments -C \
     "::next:_files" \
     {-h,--help}'[show help information]'   \
     {-o,--output}'[path backups are written to]' \
-    {-i,--start-index}'[index to start copying from. Ignored if using srcpaths]' \
-    {-f,--jobfile}'[continue a pre-existing mvcopy job that was interrupted. (see also --start-index)]' \
+    {-f,--jobfile}'[continue a pre-existing mvcopy job that was interrupted. (see also --device-startindex)]' \
+    {-i,--device-startindex}'[files will be copied to device starting from this index. (affects deleted files during merge).]' \
+    {-si,--select-index}'[copy starts at this index. must be later than --device-startindex]' \
     {-v,--verbose}'[verbose logging]' \
     {-vv,--very-verbose}'[very verbose logging]' \
     --no-progress'[do not show progressbar]' \
