@@ -26,7 +26,7 @@ class JobFileResolver(resolver.Resolver):
 
     def get_copyfiles(self, device_start_index=None, start_index=None):
         with open(self._filepath, 'r') as fd:
-            copyfiles = json.loads(fd.read())
-        return copyfiles
+            raw_copyfiles = json.loads(fd.read())
+        return tuple([resolver.CopyFile(*x) for x in raw_copyfiles])
 
 

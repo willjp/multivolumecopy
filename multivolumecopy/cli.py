@@ -2,12 +2,19 @@
 """ Commandline interface.
 """
 from __future__ import absolute_import, division, print_function
+import multiprocessing
 import argparse
 import logging
 import sys
 from multivolumecopy.resolvers import directorylistresolver, jobfileresolver
 from multivolumecopy import copyoptions
 from multivolumecopy.copiers import multiprocesscopier
+
+
+# The default, method 'fork' creates a copy of 
+# everything in memory, which is undesirable here.
+# Better that processes have only the context they need.
+multiprocessing.set_start_method('spawn')
 
 
 class CommandlineInterface(object):

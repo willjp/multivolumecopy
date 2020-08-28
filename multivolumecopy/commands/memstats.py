@@ -19,17 +19,21 @@ class MemStats(commandbase.CommandBase):
 
     def __init__(self):
         tracemalloc.start()
+        self._filters = [tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
+                         tracemalloc.Filter(False, "<unknown>")]
         if MemStats.LAST_SNAPSHOT is None:
-            MemStats.LAST_SNAPSHOT = tracemalloc.take_snapshot()
+            MemStats.LAST_SNAPSHOT = tracemalloc.take_snapshot().filter_traces(self._filters)
 
         super(MemStats, self).__init__()
 
     def execute(self):
-        MemStats.SNAPSHOT = tracemalloc.take_snapshot()
+        MemStats.SNAPSHOT = tracemalloc.take_snapshot().filter_traces(self._filters)
 
         # descending list of processes with largest change in memory consumption
-        stats = self.SNAPSHOT.compare_to(self.LAST_SNAPSHOT, 'lineno')
-        stats = list(filter(lambda x: fnmatch.fnmatch(x.traceback[0].filename, '*/multivolumecopy/*'), stats))
+        raw_stats = self.SNAPSHOT.compare_to(self.LAST_SNAPSHOT, 'lineno')
+        stats = raw_stats.filter_traces(tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
+                                        tracemalloc.Filter(False, "<unknown>"))
+        #stats = list(filter(lambda x: fnmatch.fnmatch(x.traceback[0].filename, '*/multivolumecopy/*'), stats))
         stats = sorted(stats, key=lambda x: x.size, reverse=True)
 
         # 'top' style preview, and pdb for investigation
