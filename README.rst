@@ -9,9 +9,8 @@ Usage
 
 .. code-block:: bash
 
-    multivolumecopy \
-      /mnt/media/{movies,tvshows,music,books} \
-      --output /mnt/usb
+    multivolumecopy /mnt/src -o /mnt/usb
+    multivolumecopy /mnt/src/{books,ambient,radio} -o /mnt/usb
 
     # when /mnt/usb is full, you'll be prompted to replace it
     # with another disk
