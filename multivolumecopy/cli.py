@@ -7,7 +7,7 @@ import logging
 import sys
 from multivolumecopy.resolvers import directorylistresolver, jobfileresolver
 from multivolumecopy import copyoptions
-from multivolumecopy.copiers import simplecopier, multiprocesscopier
+from multivolumecopy.copiers import multiprocesscopier
 
 
 class CommandlineInterface(object):

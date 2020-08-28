@@ -9,11 +9,11 @@ class Copier(object):
     """
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, source, options=None):
+    def __init__(self, resolver, options=None):
         """
         Args:
-            source (CopySource):
-                CopySource object, determines files to be copied.
+            source (resolver.Resolver):
+                Resolver, determines files to be copied.
 
             output (str): ``(ex: '/mnt/backup' )``
                 The directory you'd like to backup to.
@@ -21,7 +21,7 @@ class Copier(object):
             options (CopyOptions, None):
                 Options to use while performing copy
         """
-        self._source = source
+        self._resolver = resolver
         self._options = options or copyoptions.CopyOptions()
         super(Copier, self).__init__()
 
@@ -32,10 +32,10 @@ class Copier(object):
         return self._options
 
     @property
-    def source(self):
+    def resolver(self):
         """ The Resolver used to find files.
         """
-        return self._source
+        return self._resolver
 
     def start(self):
         """ Copies files, prompting for new device when device is full.

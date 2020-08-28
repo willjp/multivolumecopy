@@ -1,5 +1,3 @@
-""" Initiates a copy operation.
-"""
 import logging
 import multiprocessing
 import multiprocessing.managers
@@ -26,12 +24,11 @@ class MultiProcessCopier(copier.Copier):
         * Memory issues with last version. Isolating copyjobs
           into processes makes it easier clean up after them.
     """
-
     def __init__(self, resolver, options=None):
         """
         Args:
             resolver (resolver.Resolver):
-                CopySource object, determines files to be copied.
+                Resolver, determines files to be copied.
 
             output (str): ``(ex: '/mnt/backup' )``
                 The directory you'd like to backup to.
@@ -99,7 +96,7 @@ class MultiProcessCopier(copier.Copier):
         # where to copy from
         start_index = start_index or device_start_index or 0
 
-        self._copyfiles = self.source.get_copyfiles()
+        self._copyfiles = self.resolver.get_copyfiles()
         self._setup_copied_indexes(device_start_index)
         self.write_jobfile(self._copyfiles)
 
@@ -252,7 +249,8 @@ class MultiProcessCopier(copier.Copier):
 
 
 class _MultiProcessCopierWorkerManager(object):
-    """ Manages worker processes.
+    """ Manages worker processes, restarting them
+    automatically when they exit (while iterating through this object).
     """
     def __init__(self, joblist, started_queue, completed_queue, error_queue, device_full_lock, options):
         self._workers = []
@@ -322,7 +320,8 @@ class _MultiProcessCopierWorkerManager(object):
 
 
 class _MultiProcessCopierWorker(multiprocessing.Process):
-    """ Processes queue items (copy files) forever until poison pill is received.
+    """ Performs copy on files added to the queue.
+    Runs until it's lifespan is reached, or it receives a poison pill from the queue.
     """
     def __init__(self, joblist, started_queue, completed_queue, error_queue, device_full_event, maxtasks=50, *args, **kwargs):
         super(_MultiProcessCopierWorker, self).__init__(*args, **kwargs)
