@@ -9,21 +9,14 @@ from multivolumecopy import filesystem
 from multivolumecopy.copiers import copier
 from multivolumecopy.progress import lineformatter
 from multivolumecopy.prompts import commandlineprompt
-from multivolumecopy.reconcilers import deleteallreconciler, keepfilesreconciler
+from multivolumecopy.reconcilers import keepfilesreconciler
 
-import tracemalloc
-import pprint
-import fnmatch
-tracemalloc.start()
-last_snapshot = None
-snapshot = None
 
 logger = logging.getLogger(__name__)
 
 
 WINDOWS_DISKFULL_ERRNO = 39
 POSIX_DISKFULL_ERRNO = 28
-
 
 
 class MultiProcessCopier(copier.Copier):
@@ -153,19 +146,6 @@ class MultiProcessCopier(copier.Copier):
         processed_files = len(self._copied_indexes) + len(self._error_indexes)
         return processed_files == len(self._copyfiles)
 
-    def _print_memory_changes(self):
-        global snapshot
-        global last_snapshot
-        last_snapshot = snapshot
-        snapshot = tracemalloc.take_snapshot()
-        if last_snapshot:
-            top_stats = snapshot.compare_to(last_snapshot, 'lineno')
-            top_stats = list(filter(lambda x: fnmatch.fnmatch(x.traceback[0].filename, '*/multivolumecopy/*'), top_stats))
-            top_stats = sorted(top_stats, key=lambda x: x.size)
-            print('----------------------')
-            pprint.pprint(list(reversed(top_stats[-10:])))
-            import pdb;pdb.set_trace()
-
     def _evaluate_queues(self):
         self._evaluate_started_queue()
         self._evaluate_error_queue()
@@ -186,10 +166,6 @@ class MultiProcessCopier(copier.Copier):
                 self._try_remove_started_index(filedata.index)
                 self._copied_indexes.append(filedata.index)
                 self._render_progress(filedata=filedata)
-
-                # TODO: REMOVE ME! TEMP!
-                if filedata.index % 20 == 0:
-                    self._print_memory_changes()
             except queue.Empty:
                 return
 
@@ -409,4 +385,5 @@ class _MultiProcessCopierWorker(multiprocessing.Process):
             if os_error.errno == POSIX_DISKFULL_ERRNO:
                 return True
         return False
+
 
