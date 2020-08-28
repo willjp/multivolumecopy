@@ -12,8 +12,17 @@ class DeleteAllReconciler(reconciler.Reconciler):
     """ Simplest possible reconciler. Deletes all files from dst.
     (everything will be recopied every time).
     """
-    def __init__(self, source, options):
-        super(DeleteAllReconciler, self).__init__(source, options)
+    def __init__(self, copyfiles, options):
+        """ Constructor.
+
+        Args:
+            source (resolver.Resolver):
+                CopySource object, determines files to be copied.
+
+            options (copyoptions.CopyOptions):
+                Options to use while performing copy
+        """
+        super(DeleteAllReconciler, self).__init__(copyfiles, options)
 
     def reconcile(self, copyfiles, copied_indexes):
         # delete files
@@ -27,4 +36,3 @@ class DeleteAllReconciler(reconciler.Reconciler):
             for dirname in dirnames:
                 dirpath = os.path.abspath('{}/{}'.format(root, dirname))
                 os.rmdir(dirpath)
-

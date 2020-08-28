@@ -20,8 +20,8 @@ class JobFileResolver(resolver.Resolver):
             ]
 
     """
-    def __init__(self, filepath):
-        super(JobFileResolver, self).__init__()
+    def __init__(self, filepath, options):
+        super(JobFileResolver, self).__init__(options)
         self._filepath = filepath
 
     def get_copyfiles(self, device_start_index=None, start_index=None):

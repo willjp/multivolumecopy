@@ -112,7 +112,7 @@ class CommandlineInterface(object):
 
     def _get_copysource_from_args(self, args, options):
         if args.jobfile:
-            return jobfileresolver.JobFileResolver(args.jobfile)
+            return jobfileresolver.JobFileResolver(args.jobfile, options)
         if args.srcpaths:
             return directorylistresolver.DirectoryListResolver(args.srcpaths, options)
         raise NotImplementedError()

@@ -61,5 +61,3 @@ class Copier(object):
 
     def append_errorfile(self):
         pass
-
-
