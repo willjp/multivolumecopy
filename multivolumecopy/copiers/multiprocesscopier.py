@@ -1,4 +1,4 @@
-""" foo
+""" Initiates a copy operation.
 """
 import logging
 import multiprocessing
@@ -20,11 +20,11 @@ POSIX_DISKFULL_ERRNO = 28
 
 
 class MultiProcessCopier(copier.Copier):
-    """
+    """ Performs file copies using multiple threads (faster).
 
     Notes:
-        * Memory issues with last version. Isolating copy jobs into processes
-          that are easier to clean up .
+        * Memory issues with last version. Isolating copyjobs
+          into processes makes it easier clean up after them.
     """
 
     def __init__(self, resolver, options=None):

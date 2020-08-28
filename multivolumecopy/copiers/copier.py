@@ -1,5 +1,5 @@
-import json
 import abc
+import json
 import os
 from multivolumecopy import copyoptions
 
@@ -43,10 +43,20 @@ class Copier(object):
         raise NotImplementedError()
 
     def write_jobfile(self, copyfiles):
+        """ Writes the jobfile.
+
+        Jobfile contains info about all files to be copied.
+        (You can resume progress if you have this file).
+        """
         with open(self.options.jobfile, 'w') as fd:
             fd.write(json.dumps(copyfiles, indent=2))
 
     def remove_jobfile(self):
+        """ Removes the jobfile.
+
+        Jobfile contains info about all files to be copied.
+        (You can resume progress if you have this file).
+        """
         if os.path.isfile(self.options.jobfile):
             os.remove(self.options.jobfile)
 

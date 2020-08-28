@@ -33,7 +33,8 @@ class CopyOptions(object):
         # (this adds up quickly, watch your process in top/taskmanager)
         self.max_worker_tasks = 5
 
-        # desired number of worker processes to execute copies
+        # Desired number of worker processes to execute copies
+        # more workers == more ram. Conservative is better.
         self.num_workers = (multiprocessing.cpu_count() - 1) or 1
 
         # ================
