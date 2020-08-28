@@ -1,4 +1,8 @@
+import collections
 import abc
+
+
+CopyFile = collections.namedtuple('CopyFile', ('src', 'dst', 'relpath', 'bytes', 'index'))
 
 
 class Resolver(object):
@@ -24,6 +28,10 @@ class Resolver(object):
 
             start_index (int, optional):
                 the index to start copying from.
+
+        Returns:
+            tuple[Resolver.CopyFile]:
+                a tuple of copyfiles namedtuples.
         """
         raise NotImplementedError()
 

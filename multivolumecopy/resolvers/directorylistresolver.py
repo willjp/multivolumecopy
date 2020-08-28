@@ -72,6 +72,8 @@ class DirectoryListResolver(resolver.Resolver):
         for i in range(len(copyfiles)):
             copyfiles[i]['index'] = i
 
-        return copyfiles
+        # convert to a tuple of namedtuples.
+        # (list[dict] consumes lots of memory)
+        return tuple([resolver.CopyFile(**kwargs) for kwargs in copyfiles])
 
 

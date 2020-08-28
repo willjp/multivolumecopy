@@ -10,17 +10,17 @@ class KeepFilesReconciler(reconciler.Reconciler):
     Notes:
         * assumes queue order matches resolver list.
     """
-    def __init__(self, source, options):
+    def __init__(self, resolver, options):
         """ Constructor.
 
         Args:
-            source (resolver.Resolver):
+            resolver (resolver.Resolver):
                 CopySource object, determines files to be copied.
 
             options (copyoptions.CopyOptions):
                 Options to use while performing copy
         """
-        super(KeepFilesReconciler, self).__init__(source, options)
+        super(KeepFilesReconciler, self).__init__(resolver, options)
 
     def reconcile(self, copyfiles, copied_indexes):
         """
@@ -32,7 +32,8 @@ class KeepFilesReconciler(reconciler.Reconciler):
                 .. code-block:: python
 
                     [
-                        {'src': '/s/a/b.txt', 'dst': '/z/a/b.txt', 'relpath': 'a/', 'bytes': 1024},
+                        Reconciler.CopyFile(src='/s/a/b.txt', dst='/z/a/b.txt', relpath='a/', bytes=1024),
+                        Reconciler.CopyFile(...),
                         ...
                     ]
 
@@ -57,7 +58,7 @@ class KeepFilesReconciler(reconciler.Reconciler):
         target_indexes = self._estimate_targets(avail_bytes, copyfiles, copied_indexes)
         purge_indexes = [i for i in range(len(copyfiles)) if i not in copied_indexes and i not in target_indexes]
         for i in purge_indexes:
-            dstfile = copyfiles[i]['dst']
+            dstfile = copyfiles[i].dst
             if os.path.isfile(dstfile):
                 os.remove(dstfile)
 
@@ -65,7 +66,7 @@ class KeepFilesReconciler(reconciler.Reconciler):
         # catches both files that have alread been copied (`copied_indexes`)
         # and files that have nothing to do with our copy job.
         unrelated_files = set()
-        uncopied_dstfiles = [copyfiles[i]['dst'] for i in range(len(copyfiles)) if i not in copied_indexes]
+        uncopied_dstfiles = [copyfiles[i].dst for i in range(len(copyfiles)) if i not in copied_indexes]
 
         for (root, dirnames, filenames) in os.walk(self.options.output):
             for filename in filenames:
@@ -91,9 +92,9 @@ class KeepFilesReconciler(reconciler.Reconciler):
         backup_bytes = 0
         for i in uncopied_indexes:
             copyfile = copyfiles[i]
-            if (backup_bytes + copyfile['bytes']) >= avail_bytes:
+            if (backup_bytes + copyfile.bytes) >= avail_bytes:
                 return target_indexes
             target_indexes.append(i)
-            backup_bytes += copyfile['bytes']
+            backup_bytes += copyfile.bytes
         return target_indexes
 

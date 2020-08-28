@@ -147,7 +147,7 @@ class MultiProcessCopier(copier.Copier):
         # affects which files get deleted during reconciliation.
         if not device_start_index:
             return
-        self._copied_indexes = [x['index'] for x in self._copyfiles[:device_start_index]]
+        self._copied_indexes = [x.index for x in self._copyfiles[:device_start_index]]
 
     def copy_finished(self):
         processed_files = len(self._copied_indexes) + len(self._error_indexes)
@@ -163,7 +163,8 @@ class MultiProcessCopier(copier.Copier):
             top_stats = list(filter(lambda x: fnmatch.fnmatch(x.traceback[0].filename, '*/multivolumecopy/*'), top_stats))
             top_stats = sorted(top_stats, key=lambda x: x.size)
             print('----------------------')
-            pprint.pprint(top_stats[-10:])
+            pprint.pprint(list(reversed(top_stats[-10:])))
+            import pdb;pdb.set_trace()
 
     def _evaluate_queues(self):
         self._evaluate_started_queue()
@@ -174,7 +175,7 @@ class MultiProcessCopier(copier.Copier):
         while True:
             try:
                 data = self._started_queue.get(timeout=0)
-                self._started_indexes.append(data['index'])
+                self._started_indexes.append(data.index)
             except queue.Empty:
                 return
 
@@ -182,12 +183,12 @@ class MultiProcessCopier(copier.Copier):
         while True:
             try:
                 filedata = self._completed_queue.get(timeout=0)
-                self._try_remove_started_index(filedata['index'])
-                self._copied_indexes.append(filedata['index'])
+                self._try_remove_started_index(filedata.index)
+                self._copied_indexes.append(filedata.index)
                 self._render_progress(filedata=filedata)
 
                 # TODO: REMOVE ME! TEMP!
-                if filedata['index'] % 25 == 0:
+                if filedata.index % 20 == 0:
                     self._print_memory_changes()
             except queue.Empty:
                 return
@@ -196,8 +197,8 @@ class MultiProcessCopier(copier.Copier):
         while True:
             try:
                 filedata = self._error_queue.get(timeout=0)
-                self._try_remove_started_index(filedata['index'])
-                self._error_indexes.append(filedata['index'])
+                self._try_remove_started_index(filedata.index)
+                self._error_indexes.append(filedata.index)
                 self._render_progress(filedata=filedata)
             except queue.Empty:
                 return
@@ -381,8 +382,8 @@ class _MultiProcessCopierWorker(multiprocessing.Process):
 
             # otherwise data is a single copyfile dict.
             try:
-                filesystem.copyfile(src=data['src'], dst=data['dst'], reraise=True, log_errors=False)
-                filesystem.copyfilestat(src=data['src'], dst=data['dst'])
+                filesystem.copyfile(src=data.src, dst=data.dst, reraise=True, log_errors=False)
+                filesystem.copyfilestat(src=data.src, dst=data.dst)
                 self._completed_queue.put(data)
             except(OSError) as exc:
                 if not self._exception_indicates_device_full(exc):

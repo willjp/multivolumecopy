@@ -36,17 +36,19 @@ class LineFormatter(object):
             error_indexes (list):
                 list of indexes of files that were unable to be copied.
 
-            last_filedata (dict):
+            last_filedata (resolver.CopyFile):
                 dictionary with info about the last file that was successfully copied.
 
                 .. code-block:: python
 
-                    {'
+                    resolver.CopyFile(src='/s/a/b.txt', dst='/z/a/b.txt', relpath='a/', bytes=1024),
 
         """
+        self._progressbar.update(index, lastindex_total)
+
         # last_file
         if last_filedata:
-            last_srcfile = last_filedata.get('src', '')
+            last_srcfile = last_filedata.src or ''
         else:
             last_srcfile = ''
 
@@ -75,12 +77,12 @@ class LineFormatter(object):
             lastindex_total (int):
                 total number of files to copy (regardless how many devices
 
-            filedata (dict):
+            filedata (resolver.CopyFile):
                 Dictionary of filedata.
 
                 .. code-block:: python
 
-                    {"src": "/src/a.txt", "dst": "/dst/a.txt", "relpath": "a.txt", "bytes": 1000, "index": 1},
+                    resolver.CopyFile(src='/s/a/b.txt', dst='/z/a/b.txt', relpath='a/', bytes=1024),
 
         """
         fmt = self._format_options(index, lastindex_total, error_indexes, filedata)

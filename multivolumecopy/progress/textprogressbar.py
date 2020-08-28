@@ -19,6 +19,7 @@ class TextProgressBar(object):
         self._percent = 0.0
         self._completed_steps = 0
         self._remaining_steps = 0
+        self.update(0, 0)
 
     def __str__(self):
         return self.format()
