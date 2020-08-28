@@ -13,6 +13,7 @@ from multivolumecopy.reconcilers import deleteallreconciler, keepfilesreconciler
 
 import tracemalloc
 import pprint
+import fnmatch
 tracemalloc.start()
 last_snapshot = None
 snapshot = None
@@ -123,11 +124,8 @@ class MultiProcessCopier(copier.Copier):
         self._mainloop()
 
     def _mainloop(self):
-        loops = 0
         try:
             while True:
-                loops += 1
-
                 # render 0% progress
                 self._render_progress()
 
@@ -135,10 +133,6 @@ class MultiProcessCopier(copier.Copier):
                 self._manager.build_workers()
 
                 self._evaluate_queues()
-
-                if loops % 50:
-                    self._print_memory_changes()
-
                 self._evaluate_diskfull_check()
 
                 if self.copy_finished():
@@ -166,8 +160,10 @@ class MultiProcessCopier(copier.Copier):
         snapshot = tracemalloc.take_snapshot()
         if last_snapshot:
             top_stats = snapshot.compare_to(last_snapshot, 'lineno')
+            top_stats = list(filter(lambda x: fnmatch.fnmatch(x.traceback[0].filename, '*/multivolumecopy/*'), top_stats))
+            top_stats = sorted(top_stats, key=lambda x: x.size)
             print('----------------------')
-            pprint.pprint(top_stats[:10])
+            pprint.pprint(top_stats[-10:])
 
     def _evaluate_queues(self):
         self._evaluate_started_queue()
@@ -189,6 +185,10 @@ class MultiProcessCopier(copier.Copier):
                 self._try_remove_started_index(filedata['index'])
                 self._copied_indexes.append(filedata['index'])
                 self._render_progress(filedata=filedata)
+
+                # TODO: REMOVE ME! TEMP!
+                if filedata['index'] % 25 == 0:
+                    self._print_memory_changes()
             except queue.Empty:
                 return
 
