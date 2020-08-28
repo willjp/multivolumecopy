@@ -11,12 +11,18 @@ from multivolumecopy.progress import lineformatter
 from multivolumecopy.prompts import commandlineprompt
 from multivolumecopy.reconcilers import deleteallreconciler, keepfilesreconciler
 
+import tracemalloc
+import pprint
+tracemalloc.start()
+last_snapshot = None
+snapshot = None
 
 logger = logging.getLogger(__name__)
 
 
 WINDOWS_DISKFULL_ERRNO = 39
 POSIX_DISKFULL_ERRNO = 28
+
 
 
 class MultiProcessCopier(copier.Copier):
@@ -117,8 +123,11 @@ class MultiProcessCopier(copier.Copier):
         self._mainloop()
 
     def _mainloop(self):
+        loops = 0
         try:
             while True:
+                loops += 1
+
                 # render 0% progress
                 self._render_progress()
 
@@ -126,6 +135,10 @@ class MultiProcessCopier(copier.Copier):
                 self._manager.build_workers()
 
                 self._evaluate_queues()
+
+                if loops % 50:
+                    self._print_memory_changes()
+
                 self._evaluate_diskfull_check()
 
                 if self.copy_finished():
@@ -145,6 +158,16 @@ class MultiProcessCopier(copier.Copier):
     def copy_finished(self):
         processed_files = len(self._copied_indexes) + len(self._error_indexes)
         return processed_files == len(self._copyfiles)
+
+    def _print_memory_changes(self):
+        global snapshot
+        global last_snapshot
+        last_snapshot = snapshot
+        snapshot = tracemalloc.take_snapshot()
+        if last_snapshot:
+            top_stats = snapshot.compare_to(last_snapshot, 'lineno')
+            print('----------------------')
+            pprint.pprint(top_stats[:10])
 
     def _evaluate_queues(self):
         self._evaluate_started_queue()

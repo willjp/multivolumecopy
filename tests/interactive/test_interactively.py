@@ -35,8 +35,8 @@ import logging
 import sys
 
 
-NUM_FILES_COPIED = 9
-#NUM_FILES_COPIED = 30
+#NUM_FILES_COPIED = 9
+NUM_FILES_COPIED = 30
 
 
 class InteractiveTestWithDiskRequest:
