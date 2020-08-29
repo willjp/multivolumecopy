@@ -1,5 +1,6 @@
 from multivolumecopy.resolvers import resolver
 import json
+import multivolumecopy.copyfile
 
 
 class JobFileResolver(resolver.Resolver):
@@ -27,6 +28,6 @@ class JobFileResolver(resolver.Resolver):
     def get_copyfiles(self, device_start_index=None, start_index=None):
         with open(self._filepath, 'r') as fd:
             raw_copyfiles = json.loads(fd.read())
-        return tuple([resolver.CopyFile(*x) for x in raw_copyfiles])
+        return tuple([multivolumecopy.copyfile.CopyFile(*x) for x in raw_copyfiles])
 
 

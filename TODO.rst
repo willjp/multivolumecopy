@@ -61,3 +61,5 @@ x [2020/08/23] re-add indexfile(s)! This is very useful!
   shutil, or something entirely unrelated, but let's move
   reading json/files in a separate process for speed, and
   keeping memory usage down.
+
+* [2020/08/29] a commandline tool to verify that a backup has actually copied everything it was supposed to.

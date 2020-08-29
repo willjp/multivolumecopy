@@ -22,5 +22,5 @@ class TestLineFormatter:
         # verify it runs without exception.
         fmt = '{' + key + '}'
         formatter = lineformatter.LineFormatter(fmt=fmt)
-        formatter.format(index=0, lastindex_total=1, filedata=valid_filedata)
+        formatter.format(index=0, lastindex_total=1, error_indexes=[], filedata=valid_filedata)
 

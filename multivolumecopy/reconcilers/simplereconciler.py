@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 from multivolumecopy.reconcilers import reconciler
 from multivolumecopy import filesystem
 import sys
@@ -5,6 +8,9 @@ import os
 import logging
 
 
+# ==================
+# TODO: DELETE ME!
+# ==================
 # WARNING!!! This is super flawed. See TODO.rst
 
 

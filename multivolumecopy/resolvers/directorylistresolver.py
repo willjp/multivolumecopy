@@ -1,5 +1,6 @@
 from multivolumecopy.resolvers import resolver
 import os
+import multivolumecopy.copyfile
 
 
 class DirectoryListResolver(resolver.Resolver):
@@ -74,6 +75,6 @@ class DirectoryListResolver(resolver.Resolver):
 
         # convert to a tuple of namedtuples.
         # (list[dict] consumes lots of memory)
-        return tuple([resolver.CopyFile(**kwargs) for kwargs in copyfiles])
+        return tuple([multivolumecopy.copyfile.CopyFile(**kwargs) for kwargs in copyfiles])
 
 

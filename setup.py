@@ -20,7 +20,7 @@ if __name__ == '__main__':
         author='Will Pittman',
         author_email='willjpittman@gmail.com',
         license='MIT',
-        packages=setuptools.find_packages(exclude=['tests/*']),
+        packages=setuptools.find_packages(exclude=['tests/*', 'testhelpers/*']),
         entry_points={
             'console_scripts': [
                 'multivolumecopy=multivolumecopy.cli:CommandlineInterface.exec_',

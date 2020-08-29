@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 import os
 from multivolumecopy import filesystem
 from multivolumecopy.reconcilers import reconciler
@@ -10,28 +13,6 @@ class KeepFilesReconciler(reconciler.Reconciler):
     Notes:
         * assumes queue order matches resolver list.
     """
-    def reconcile(self, copyfiles, copied_indexes):
-        """
-        Args:
-            copyfiles (list):
-                List of a dictionaries. One dict per-file containins
-                path/size info.
-
-                .. code-block:: python
-
-                    [
-                        Reconciler.CopyFile(src='/s/a/b.txt', dst='/z/a/b.txt', relpath='a/', bytes=1024),
-                        Reconciler.CopyFile(...),
-                        ...
-                    ]
-
-            copied_indexes (list):
-                List of indexes that have already been copied from provided `copyfiles` .
-        """
-        filepaths = self.calculate(copyfiles, copied_indexes)
-        for filepath in filepaths:
-            os.remove(filepath)
-
     def calculate(self, copyfiles, copied_indexes):
         """ Determines files that need to be deleted.
         """

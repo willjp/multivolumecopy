@@ -1,5 +1,8 @@
 """
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 import os
 import logging
 from multivolumecopy.reconcilers import reconciler
@@ -24,15 +27,11 @@ class DeleteAllReconciler(reconciler.Reconciler):
         """
         super(DeleteAllReconciler, self).__init__(copyfiles, options)
 
-    def reconcile(self, copyfiles, copied_indexes):
-        # delete files
-        for (root, dirnames, filenames) in os.walk(self.options.output):
+    def calculate(self, copyfiles, copied_indexes):
+        filepaths = []
+        for (root, _, filenames) in os.walk(self.options.output):
             for filename in filenames:
                 filepath = os.path.abspath('{}/{}'.format(root, filename))
-                os.remove(filepath)
+                filepaths.append(filepath)
+        return set(filepaths)
 
-        # delete directories
-        for (root, dirnames, filenames) in os.walk(self.options.output):
-            for dirname in dirnames:
-                dirpath = os.path.abspath('{}/{}'.format(root, dirname))
-                os.rmdir(dirpath)
