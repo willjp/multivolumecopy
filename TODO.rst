@@ -3,11 +3,13 @@ Safety
 ======
 
 
-* [2020/08/22] `resolved?` numbers are getting lost at the rotation.
+x [2020/08/22] `resolved?` numbers are getting lost at the rotation.
   in ineteractive test. 3, 7, 8 should be used in last backup.
   instead we have an extra cycle, and then the last cycle doesn't copy the right files.
 
-* [2020/08/22] `resolved?` Reconciler method should be extracted, handling both identifiaction
+o [2020/08/07] `wip` code and tests are really horrible. maybe rewrite?
+
+o [2020/08/22] `resolved?` Reconciler method should be extracted, handling both identifiaction
   and deletion of files. Optimizations can be made by:
 
    (reconciliation)
@@ -23,13 +25,11 @@ Safety
      in each loop until we run out of room.
      (we need to make sure that 2x disks do not have different versions of the same file)
 
-...
-
-* [2020/08/09] `resolved?` on file copy error because disk is full,
+x [2020/08/09] `resolved?` on file copy error because disk is full,
   prompt for disk rollover. (files sizes vary between filesystems,
   especially if they are using compression)
 
-* [2020/08/09] `resolved?` files not being deleted from dst when used
+x [2020/08/09] `resolved?` files not being deleted from dst when used
   on fileserver, but seems to be while testing interactively.
   subdirectories maybe? identify and fix.
 
@@ -39,30 +39,25 @@ Safety
 * [2020/08/07] verify and warn if the same disk is mounted
   on disk rollover
 
-* [2020/08/07] `wip` code and tests are really horrible. maybe rewrite?
 
-* [2020/08/07] `resolved?` rewrite as queue/consumer so faster (accept num workers on cli)
+x [2020/08/07] `resolved?` rewrite as queue/consumer so faster (accept num workers on cli)
 
-* [2020/08/22] `resolved?` _volume_delete_extraneous only deletes files under destdir.
+x [2020/08/22] `resolved?` _volume_delete_extraneous only deletes files under destdir.
   It ignores files copied elsewhere on the drive. 
 
   This is good, but volume capacity calculation should be
   run following this operation, and use amount of space left
   on disk at that point.
 
-* [2020/08/22] `resolved?` These methods need to be extracted into classes.
-  The whole thing needs to be restrured.
-
 * [2020/08/22] Consider emitting a unix signal, writing to a socket or something
   when we are ready to switch the device. It would be good to automate this for tests,
   and also for end-user automation.
 
-* [2020/08/23] re-add jobfile! This is very useful!
+x [2020/08/23] re-add jobfile! This is very useful!
 
-* [2020/08/23] re-add indexfile(s)! This is very useful!
+x [2020/08/23] re-add indexfile(s)! This is very useful!
 
-* [2020/08/23] reconciliation alone consumes lots of ram.
-  it may be prudent to also use the producer/consumer pattern for
-  deleting files
-
-
+* [2020/08/28] uncertain if cause is os.stat on files,
+  shutil, or something entirely unrelated, but let's move
+  reading json/files in a separate process for speed, and
+  keeping memory usage down.
