@@ -56,11 +56,24 @@ def volume_capacity(output):
     Returns:
         int: size in bytes
     """
+    statvfs = os.statvfs(output)
+    avail_bytes = statvfs.f_blocks * statvfs.f_frsize
+
+    return avail_bytes
+
+
+def volume_free(output):
+    """ Obtains available bytes on the volume (on which directory `output` resides).
+
+    Returns:
+        int: size in bytes
+    """
     # get free space left on volume
     statvfs = os.statvfs(output)
     avail_bytes = statvfs.f_bavail * statvfs.f_frsize
 
     return avail_bytes
+
 
 # TODO DELETE ME
 def backup_bytes(output):
