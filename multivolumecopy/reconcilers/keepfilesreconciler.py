@@ -1,6 +1,6 @@
-from multivolumecopy.reconcilers import reconciler
-from multivolumecopy import filesystem
 import os
+from multivolumecopy import filesystem
+from multivolumecopy.reconcilers import reconciler
 
 
 class KeepFilesReconciler(reconciler.Reconciler):
@@ -10,18 +10,6 @@ class KeepFilesReconciler(reconciler.Reconciler):
     Notes:
         * assumes queue order matches resolver list.
     """
-    def __init__(self, resolver, options):
-        """ Constructor.
-
-        Args:
-            resolver (resolver.Resolver):
-                CopySource object, determines files to be copied.
-
-            options (copyoptions.CopyOptions):
-                Options to use while performing copy
-        """
-        super(KeepFilesReconciler, self).__init__(resolver, options)
-
     def reconcile(self, copyfiles, copied_indexes):
         """
         Args:
@@ -93,6 +81,9 @@ class KeepFilesReconciler(reconciler.Reconciler):
 
     def _estimate_targets(self, avail_bytes, copyfiles, copied_indexes):
         """ Return a list of copyfiles we think will fit on the curent volume.
+
+        Will almost certainly will be innaccurate due to differences in filesystems,
+        compression, and strange quirks like zfs reporting of df/dh.
         """
         target_indexes = []
         uncopied_indexes = [i for i in range(len(copyfiles)) if i not in copied_indexes]

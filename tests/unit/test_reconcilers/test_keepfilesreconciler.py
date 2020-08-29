@@ -48,7 +48,7 @@ class TestKeepFilesReconciler:
         self.options = copyoptions.CopyOptions()
         self.options.output = '/dst'
 
-    @mock.patch('multivolumecopy.reconcilers.keepfilesreconciler.KeepFilesReconciler.calculate', 
+    @mock.patch('multivolumecopy.reconcilers.keepfilesreconciler.KeepFilesReconciler.calculate',
                 return_value=['/dst/a/1.txt', '/dst/0.txt'])
     @mock.patch('os.remove')
     def test_reconcile_deletes_files(self, m_remove, m_calculate):
@@ -92,6 +92,16 @@ class TestKeepFilesReconciler:
             filepaths = reconciler.calculate(self.copyfiles, copied_indexes)
         assert filepaths == {'/dst/0.txt', '/dst/a/2.txt'}
 
+    @mock.patch('multivolumecopy.filesystem.volume_free', return_value=8192)
+    def test_calculate_does_not_indicate_removal_of_files_involved_in_backup(self, m_free):
+        # paths are part of backup, and should not be removed
+        walk_paths = {'/dst': [('/dst', ['a'], ['0.txt']),
+                               ('/dst/a', [], ['2.txt'])]}
+        reconciler = keepfilesreconciler.KeepFilesReconciler(self.resolver, self.options)
+        with mock_walk(walk_paths):
+            filepaths = reconciler.calculate(self.copyfiles, copied_indexes=[])
+        assert filepaths == set()
+
     @mock.patch('multivolumecopy.filesystem.volume_free', return_value=1200)
     def test_calculate_indicates_removal_of_files_device_will_not_have_room_for(self, m_free):
         """ Indicate removal of files that won't fit on this device.
@@ -105,3 +115,5 @@ class TestKeepFilesReconciler:
         with mock_isfile(isfile_results):
             filepaths = reconciler.calculate(self.copyfiles, copied_indexes)
         assert filepaths == {'/dst/a/1.txt', '/dst/a/2.txt'}
+
+
