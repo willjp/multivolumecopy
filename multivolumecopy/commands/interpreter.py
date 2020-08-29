@@ -11,7 +11,8 @@ class Interpreter(object):
         hacky, mostly here for debugging.
     """
     def __init__(self):
-        self._commands = [memstats.MemStats()]
+        #self._commands = [memstats.MemStats()]
+        self._commands = []
 
     def eval_user_commands(self):
         # nothing to evaluate if no commands present
