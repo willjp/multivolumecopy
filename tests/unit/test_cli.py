@@ -3,58 +3,57 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-# package
-# external
+import sys
 import mock
 import pytest
-# internal
 from multivolumecopy import cli
 
 
-ns = cli.__name__
-
-
-@pytest.fixture
-def mock_args():
-    """ default cli-arg values
-    """
-    _mock_args = mock.Mock()
-    _mock_args.srcpaths = None
-    _mock_args.jobfile = None
-    _mock_args.output = None
-    _mock_args.device_padding = None
-    _mock_args.no_progress = False
-
-    return _mock_args
-
-
 class Test_CommandlineInterface(object):
-    def test_no_device_padding(self, mock_args):
-        mock_args.srcpaths = ['/src']
-        mock_args.output = '/dst'
-        result = self.cli(mock_args)
-        expects = mock.call(['/src'], output='/dst', device_padding=None, no_progressbar=False)
+    def setup(self):
+        self.cli = cli.CommandlineInterface()
 
-        assert result == [expects]
+    @mock.patch('multivolumecopy.copiers.multiprocesscopier.MultiProcessCopier')
+    def test_parse_args_sets_output(self, m_copier):
+        sys.argv = ['multivolumecopy', '/src', '-o', '/dst']
+        self.cli.parse_args()
+        assert self.cli.options.output == '/dst'
 
-    def test_with_device_padding(self, mock_args):
-        mock_args.srcpaths = ['/src']
-        mock_args.output = '/dst'
-        mock_args.device_padding = '5M'
-        result = self.cli(mock_args)
-        expects = mock.call(['/src'], output='/dst', device_padding='5M', no_progressbar=False)
+    @mock.patch('multivolumecopy.copiers.multiprocesscopier.MultiProcessCopier')
+    def test_parse_args_sets_device_padding(self, m_copier):
+        sys.argv = ['multivolumecopy', '--device-padding', '5M', '/src', '-o', '/dst']
+        self.cli.parse_args()
+        assert self.cli.options.device_padding == 5000000
 
-        assert result == [expects]
+    @mock.patch('multivolumecopy.copiers.multiprocesscopier.MultiProcessCopier')
+    def test_parse_args_sets_show_progressbar(self, m_copier):
+        sys.argv = ['multivolumecopy', '--hide-progress', '/src', '-o', '/dst']
+        self.cli.parse_args()
+        assert self.cli.options.show_progressbar == False
 
-    def cli(self, args):
-        if not isinstance(args, mock.Mock):
-            raise TypeError()
+    @mock.patch('multivolumecopy.copiers.multiprocesscopier.MultiProcessCopier')
+    def test_parse_args_sets_select_index(self, m_copier_cls):
+        m_copier = mock.Mock()
+        m_copier_cls.return_value = m_copier
 
-        cli_ = cli.CommandlineInterface()
-        cli_.parser.parse_args = args
+        sys.argv = ['multivolumecopy', '--select-index', '10', '/src', '-o', '/dst']
+        self.cli.parse_args()
+        m_copier.start.assert_called_with(None, 10)
 
-        with mock.patch('{}.sys'.format(ns)):
-            with mock.patch.object(cli_.parser, 'parse_args', return_value=args):
-                with mock.patch('{}.mvcopy.mvcopy_srcpaths'.format(ns)) as mock_mvcopy:
-                    cli_.parse_args()
-                    return mock_mvcopy.mock_calls
+    @mock.patch('multivolumecopy.copiers.multiprocesscopier.MultiProcessCopier')
+    def test_parse_args_sets_device_index(self, m_copier_cls):
+        m_copier = mock.Mock()
+        m_copier_cls.return_value = m_copier
+
+        sys.argv = ['multivolumecopy', '--device-startindex', '10', '/src', '-o', '/dst']
+        self.cli.parse_args()
+        m_copier.start.assert_called_with(10, None)
+
+    @mock.patch('multivolumecopy.resolvers.jobfileresolver.JobFileResolver')
+    @mock.patch('multivolumecopy.copiers.multiprocesscopier.MultiProcessCopier')
+    def test_parse_args_sets_jobfile(self, m_copier_cls, m_resolver_cls):
+        sys.argv = ['multivolumecopy', '--jobfile', '/tmp/.mvcopy-jobfile.json', '/src', '-o', '/dst']
+        self.cli.parse_args()
+        m_resolver_cls.assert_called_with('/tmp/.mvcopy-jobfile.json', self.cli.options)
+
+

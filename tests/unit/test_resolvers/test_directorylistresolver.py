@@ -19,44 +19,44 @@ class TestDirectoryListResolver:
         walk_paths = {'/src': [('/src', [], ['a.txt'])]}
         self.resolver.options.output = '/dst'
         copyfiles = self.get_copyfiles(self.resolver, walk_paths)
-        assert copyfiles[0]['relpath'] == 'a.txt'
+        assert copyfiles[0].relpath == 'a.txt'
 
     def test_sets_relpath_for_files_in_subdirs(self):
         walk_paths = {'/src': [('/src', ['a'], []), ('/src/a', [], ['b.txt'])]}
         self.resolver.options.output = '/dst'
         copyfiles = self.get_copyfiles(self.resolver, walk_paths)
-        assert copyfiles[0]['relpath'] == 'a/b.txt'
+        assert copyfiles[0].relpath == 'a/b.txt'
 
     def test_sets_dst_for_files_at_root(self):
         walk_paths = {'/src': [('/src', [], ['a.txt'])]}
         self.resolver.options.output = '/dst'
         copyfiles = self.get_copyfiles(self.resolver, walk_paths)
-        assert copyfiles[0]['dst'] == '/dst/a.txt'
+        assert copyfiles[0].dst == '/dst/a.txt'
 
     def test_sets_dst_for_files_in_subdirs(self):
         walk_paths = {'/src': [('/src', ['a'], []), ('/src/a', [], ['b.txt'])]}
         copyfiles = self.get_copyfiles(self.resolver, walk_paths)
-        assert copyfiles[0]['dst'] == '/dst/a/b.txt'
+        assert copyfiles[0].dst == '/dst/a/b.txt'
 
     def test_sets_src_for_files_at_root(self):
         walk_paths = {'/src': [('/src', [], ['a.txt'])]}
         copyfiles = self.get_copyfiles(self.resolver, walk_paths)
-        assert copyfiles[0]['src'] == '/src/a.txt'
+        assert copyfiles[0].src == '/src/a.txt'
 
     def test_sets_src_for_files_at_root(self):
         walk_paths = {'/src': [('/src', ['a'], []), ('/src/a', [], ['b.txt'])]}
         copyfiles = self.get_copyfiles(self.resolver, walk_paths)
-        assert copyfiles[0]['src'] == '/src/a/b.txt'
+        assert copyfiles[0].src == '/src/a/b.txt'
 
     def test_sets_bytes(self):
         walk_paths = {'/src': [('/src', ['a'], []), ('/src/a', [], ['b.txt'])]}
         copyfiles = self.get_copyfiles(self.resolver, walk_paths)
-        assert copyfiles[0]['bytes'] == 1024
+        assert copyfiles[0].bytes == 1024
 
     def test_sets_index(self):
         walk_paths = {'/src': [('/src', ['a'], ['a.txt']), ('/src/a', [], ['b.txt'])]}
         copyfiles = self.get_copyfiles(self.resolver, walk_paths)
-        indexes = [x['index'] for x in copyfiles]
+        indexes = [x.index for x in copyfiles]
         assert indexes == [0, 1]
 
     def test_result_sorted_alphabetical_by_src(self):
@@ -66,7 +66,7 @@ class TestDirectoryListResolver:
             ('/src/a', [], ['3.txt']),
         ]}
         copyfiles = self.get_copyfiles(self.resolver, walk_paths)
-        indexes = [x['src'] for x in copyfiles]
+        indexes = [x.src for x in copyfiles]
         assert indexes == ['/src/1.txt', '/src/a/3.txt', '/src/b/2.txt']
 
     def test_merges_multiple_sources(self):
@@ -78,7 +78,7 @@ class TestDirectoryListResolver:
                        ('/src/b/c', [], ['2.txt'])],
         }
         copyfiles = self.get_copyfiles(resolver, walk_paths)
-        indexes = [x['src'] for x in copyfiles]
+        indexes = [x.src for x in copyfiles]
         expected = ['/src/a/1.txt',
                     '/src/a/b/2.txt',
                     '/src/b/1.txt',

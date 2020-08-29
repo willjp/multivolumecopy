@@ -1,12 +1,15 @@
-from multivolumecopy import copyoptions
+from multivolumecopy import copyoptions, copyfile
 from multivolumecopy.progress import lineformatter
 import pytest
 
 
 @pytest.fixture
 def valid_filedata():
-    return {"src": "/src/a.txt", "dst": "/dst/a.txt", "relpath": "a.txt", "bytes": 1000, "index": 1}
-
+    return copyfile.CopyFile(src="/src/a.txt",
+                             dst="/dst/a.txt",
+                             relpath="a.txt",
+                             bytes=1000,
+                             index=1)
 
 class TestLineFormatter:
     @pytest.mark.parametrize('key', [

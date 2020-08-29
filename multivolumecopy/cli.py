@@ -11,7 +11,7 @@ from multivolumecopy import copyoptions
 from multivolumecopy.copiers import multiprocesscopier
 
 
-# The default, method 'fork' creates a copy of 
+# The default, method 'fork' creates a copy of
 # everything in memory, which is undesirable here.
 # Better that processes have only the context they need.
 multiprocessing.set_start_method('spawn')
@@ -20,15 +20,19 @@ multiprocessing.set_start_method('spawn')
 class CommandlineInterface(object):
     @classmethod
     def exec_(cls):
-        cli = CommandlineInterface()
-        cli.parse_args()
+        """ build/interpret commandline interface.
+        """
+        cli_ = CommandlineInterface()
+        cli_.parse_args()
 
     def __init__(self):
-        self.parser = argparse.ArgumentParser(
-            description=('Simple Multi-Volume file copy tool. You will be prompted to replace device '
-                         'when the medium is full. (ex: multivolumecopy /path/src -o /path/dst)')
-        )
+        description = ('Simple Multi-Volume file copy tool. You will be prompted to replace device '
+                       'when the medium is full. (ex: multivolumecopy /path/src -o /path/dst)')
+        self.options = copyoptions.CopyOptions()
+        self.parser = argparse.ArgumentParser(description=description)
+        self._setup_parser()
 
+    def _setup_parser(self):
         # new job
         self.parser.add_argument(
             'srcpaths', nargs='+', help='List of filepaths to copy'
@@ -39,9 +43,6 @@ class CommandlineInterface(object):
             '-f', '--jobfile', help='Continue a pre-existing mvcopy job that was interrupted. (also see --device-startindex and --start-index)',
             metavar='/path/to/mvcopy-jobdata.json'
         )
-        # TODO: indicate 'volume start' in addition to 'index' so we can
-        #       continue a failed copy that was cancelled midway.
-
         self.parser.add_argument(
             '-i', '--device-startindex',
             help=('Choose index that corresponds to start of device. '
@@ -85,9 +86,9 @@ class CommandlineInterface(object):
         self._start(args)
 
     def _start(self, args):
-        options = self._get_copyoptions_from_args(args)
-        source = self._get_copysource_from_args(args, options)
-        copier_ = multiprocesscopier.MultiProcessCopier(source, options)
+        self._get_copyoptions_from_args(args)
+        source = self._get_copysource_from_args(args)
+        copier_ = multiprocesscopier.MultiProcessCopier(source, self.options)
 
         copier_.start(args.device_startindex, args.select_index)
 
@@ -111,17 +112,15 @@ class CommandlineInterface(object):
         logging.basicConfig(level=log_level, format='%(levelname)s| %(msg)s')
 
     def _get_copyoptions_from_args(self, args):
-        options = copyoptions.CopyOptions()
-        options.output = args.output
-        options.device_padding = args.device_padding
-        options.show_progressbar = not args.hide_progress
-        return options
+        self.options.output = args.output
+        self.options.device_padding = args.device_padding
+        self.options.show_progressbar = not args.hide_progress
 
-    def _get_copysource_from_args(self, args, options):
+    def _get_copysource_from_args(self, args):
         if args.jobfile:
-            return jobfileresolver.JobFileResolver(args.jobfile, options)
+            return jobfileresolver.JobFileResolver(args.jobfile, self.options)
         if args.srcpaths:
-            return directorylistresolver.DirectoryListResolver(args.srcpaths, options)
+            return directorylistresolver.DirectoryListResolver(args.srcpaths, self.options)
         raise NotImplementedError()
 
 
