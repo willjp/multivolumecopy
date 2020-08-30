@@ -1,11 +1,14 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+import logging
 import abc
 import os
 
 
 POSIX_DEVICE_BUSY_ERRNO = 16
+
+logger = logging.getLogger(__name__)
 
 
 class Reconciler(object):
@@ -49,7 +52,14 @@ class Reconciler(object):
             os.remove(filepath)
 
         for directory in self._find_empty_directories():
-            os.rmdir(directory)
+            try:
+              os.rmdir(directory)
+            except(OSError):
+                # directories are sorted, starting at bottom.
+                # any directories displayed raising this error
+                # had no files, but subdirectories. These subdirectories
+                # contain files, and they should.
+                pass
 
     def calculate(self, copyfiles, copied_indexes):
         """ Determines files to be deleted to make room for the backup.

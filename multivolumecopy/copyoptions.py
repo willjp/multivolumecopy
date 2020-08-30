@@ -35,7 +35,10 @@ class CopyOptions(object):
 
         # Desired number of worker processes to execute copies
         # more workers == more ram. Conservative is better.
-        self.num_workers = (multiprocessing.cpu_count() - 1) or 1
+        if multiprocessing.cpu_count() <= 2:
+            self.num_workers = 1
+        else:
+            self.num_workers = (multiprocessing.cpu_count() - 2)
 
         # Determine whether a copy is needed by comparing
         # src/dst of the followng attributes.
