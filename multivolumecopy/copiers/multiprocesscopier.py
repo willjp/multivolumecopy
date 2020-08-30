@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import logging
-import select
+import time
 import multiprocessing
 import multiprocessing.managers
 import queue
@@ -29,7 +29,7 @@ class MultiProcessCopier(copier.Copier):
         * Memory issues with last version. Isolating copyjobs
           into processes makes it easier clean up after them.
     """
-    def __init__(self, resolver, options=None):
+    def __init__(self, resolver, options=None, reconciler=None):
         """
         Args:
             resolver (resolver.Resolver):
@@ -49,22 +49,23 @@ class MultiProcessCopier(copier.Copier):
 
         # queues/locks
         self._mpmanager = multiprocessing.Manager()
-        self._joblist = self._mpmanager.list()
-        self._completed_queue = multiprocessing.Queue()
-        self._error_queue = multiprocessing.Queue()
-        self._started_queue = multiprocessing.Queue()
-        self._device_full_lock = multiprocessing.Event()
+        self.joblist = self._mpmanager.list()
+        self.completed_queue = multiprocessing.Queue()
+        self.error_queue = multiprocessing.Queue()
+        self.started_queue = multiprocessing.Queue()
+        self.device_full_lock = multiprocessing.Event()
 
         # components
-        self._prompt = commandlineprompt.CommandlinePrompt()
+        self.prompt = commandlineprompt.CommandlinePrompt()
         self._interpreter = interpreter.Interpreter()
-        self._manager = _MultiProcessCopierWorkerManager(self._joblist,
-                                                         self._started_queue,
-                                                         self._completed_queue,
-                                                         self._error_queue,
-                                                         self._device_full_lock, options)
+        self.manager = _MultiProcessCopierWorkerManager(self.joblist,
+                                                        self.started_queue,
+                                                        self.completed_queue,
+                                                        self.error_queue,
+                                                        self.device_full_lock,
+                                                        options)
         self._progress_formatter = lineformatter.LineFormatter()
-        self._reconciler = keepfilesreconciler.KeepFilesReconciler(resolver, options)
+        self.reconciler = reconciler or keepfilesreconciler.KeepFilesReconciler(resolver, options)
 
         # internal data
         self._copyfiles = []
@@ -72,7 +73,7 @@ class MultiProcessCopier(copier.Copier):
         self._error_indexes = []
         self._started_indexes = []
 
-    def start(self, device_start_index=None, start_index=None):
+    def start(self, device_start_index=None, start_index=None, maxloops=-1):
         """ Copies files, prompting for new device when device is full.
 
         Example:
@@ -98,6 +99,11 @@ class MultiProcessCopier(copier.Copier):
             start_index (int, optional):
                 Determines which files get queued for copying.
                 Does not affect reconcliation.
+
+            maxloops (int):
+                Exit after this many loops.
+                Negative numbers loop infinitely.
+                For testing.
         """
         # where to copy from
         start_index = start_index or device_start_index or 0
@@ -108,26 +114,37 @@ class MultiProcessCopier(copier.Copier):
 
         # only queue copyfiles after startindex
         for copyfile in self._copyfiles[start_index:]:
-            self._joblist.append(copyfile)
+            self.joblist.append(copyfile)
 
         # before we start, we reconcile using the `device_start_index`
         # then adjust copied_indexes to match `start_index` so that
         # `copy_finished` works.
-        self._reconciler.reconcile(self._copyfiles, self._copied_indexes)
+        self.reconciler.reconcile(self._copyfiles, self._copied_indexes)
         self._setup_copied_indexes(start_index)
 
         # begin eventloop
-        self._mainloop()
+        self._mainloop(maxloops)
 
-    def _mainloop(self):
+    def _mainloop(self, maxloops=-1):
+        """
+        Args:
+            maxloops (int):
+                Exit after this many loops.
+                Negative numbers loop infinitely.
+                For testing.
+        """
         try:
             while True:
+                # for testing
+                if maxloops == 0:
+                    return False
+
                 # render 0% progress
                 self._render_progress()
                 self._interpreter.eval_user_commands()
 
                 # workers periodically die to release their memory. build as-needed
-                self._manager.build_workers()
+                self.manager.build_workers()
 
                 self._evaluate_queues()
                 self._evaluate_diskfull_check()
@@ -135,10 +152,10 @@ class MultiProcessCopier(copier.Copier):
                 if self.copy_finished():
                     print('Successfully Copied {} Files'.format(len(self._copyfiles)))
                     return True
-
+                maxloops -= 1
         finally:
-            self._manager.stop()
-            self._manager.join(timeout=3000)
+            self.manager.stop()
+            self.manager.join(timeout=3000)
 
     def _setup_copied_indexes(self, device_start_index):
         # affects which files get deleted during reconciliation.
@@ -158,7 +175,7 @@ class MultiProcessCopier(copier.Copier):
     def _evaluate_started_queue(self):
         while True:
             try:
-                data = self._started_queue.get(timeout=0)
+                data = self.started_queue.get(timeout=0)
                 self._started_indexes.append(data.index)
             except queue.Empty:
                 return
@@ -166,7 +183,7 @@ class MultiProcessCopier(copier.Copier):
     def _evaluate_completed_queue(self):
         while True:
             try:
-                filedata = self._completed_queue.get(timeout=0)
+                filedata = self.completed_queue.get(timeout=0)
                 self._try_remove_started_index(filedata.index)
                 self._copied_indexes.append(filedata.index)
                 self._render_progress(filedata=filedata)
@@ -176,7 +193,7 @@ class MultiProcessCopier(copier.Copier):
     def _evaluate_error_queue(self):
         while True:
             try:
-                filedata = self._error_queue.get(timeout=0)
+                filedata = self.error_queue.get(timeout=0)
                 self._try_remove_started_index(filedata.index)
                 self._error_indexes.append(filedata.index)
                 self._render_progress(filedata=filedata)
@@ -184,10 +201,10 @@ class MultiProcessCopier(copier.Copier):
                 return
 
     def _evaluate_diskfull_check(self):
-        if self._device_full_lock.is_set():
+        if self.device_full_lock.is_set():
             # request stop, wait for all workers to finish current file
-            self._manager.stop()
-            self._manager.join()
+            self.manager.stop()
+            self.manager.join()
 
             # copy operation may finish before we have updated screen/counters
             self._evaluate_queues()
@@ -201,8 +218,8 @@ class MultiProcessCopier(copier.Copier):
             # TODO: verify no extra files on disk (if reconciliation was inaccurate due to compression etc)
             # TODO: should be able to just re-use reconcile() and check freed space.
             self._prompt_diskfull()
-            self._reconciler.reconcile(self._copyfiles, self._copied_indexes)
-            self._device_full_lock.clear()
+            self.reconciler.reconcile(self._copyfiles, self._copied_indexes)
+            self.device_full_lock.clear()
             return 0
 
     def _empty_and_requeue_started_copyfiles(self):
@@ -213,7 +230,7 @@ class MultiProcessCopier(copier.Copier):
         while len(self._started_indexes) > 0:
             index = sorted_started_indexes.pop(0)
             self._try_remove_started_index(index)
-            self._joblist.insert(0, self._copyfiles[index])
+            self.joblist.insert(0, self._copyfiles[index])
             requeued += 1
 
         if requeued:
@@ -240,7 +257,7 @@ class MultiProcessCopier(copier.Copier):
             print('(Or press "q" to abort)')
             print('')
 
-            command = self._prompt.input('> ')
+            command = self.prompt.input('> ')
             if command in ('c', 'C'):
                 return
 
@@ -284,9 +301,16 @@ class _MultiProcessCopierWorkerManager(object):
                 self._workers.remove(worker)
                 worker.close()
 
-    def build_workers(self):
+    def build_workers(self, maxloops=-1):
         """ Builds workers until number of active workers matches `options.num_workers`
+
+        Args:
+            maxloops (int, optional):
+                maximum number of loops before aborting from loop.
+                negative numbers are infinite.
+                (param for testing).
         """
+        remaining_loops = maxloops
         while True:
             if self.active_workers() < self.options.num_workers:
                 worker = _MultiProcessCopierWorker(self._joblist,
@@ -300,6 +324,11 @@ class _MultiProcessCopierWorkerManager(object):
             else:
                 break
 
+            # exit on maxloops
+            remaining_loops -= 1
+            if remaining_loops == 0:
+                return
+
     def active_workers(self):
         return len(list(filter(lambda x: x.is_alive(), self.__iter__())))
 
@@ -307,7 +336,7 @@ class _MultiProcessCopierWorkerManager(object):
         logger.debug('Stopping Workers...')
         # worker can only process a single queue item at a time.
         # please wait afterwards.
-        for i in range(self.options.num_workers):
+        for i in range(self.active_workers()):
             self._joblist.insert(0, None)
 
     def terminate(self):
@@ -330,7 +359,32 @@ class _MultiProcessCopierWorker(multiprocessing.Process):
     """ Performs copy on files added to the queue.
     Runs until it's lifespan is reached, or it receives a poison pill from the queue.
     """
-    def __init__(self, joblist, started_queue, completed_queue, error_queue, device_full_event, maxtasks=50, *args, **kwargs):
+    def __init__(self, joblist, started_queue, completed_queue, error_queue, device_full_event, maxtasks=5, *args, **kwargs):
+        """
+
+        Args:
+            joblist (multiprocessing.Manager.list):
+                list of jobs shared between workers.
+                next job at index 0.
+
+            started_queue (multiprocessing.Queue):
+                file added here when we start processing it
+
+            completed_queue (multiprocessing.Queue):
+                file added here when it is done beng processed.
+
+            error_queue (multiprocessing.Queue):
+                file added here if it could not be copied
+
+            device_full_event (multiprocessing.Event):
+                event that is set when the disk indicates it is full.
+
+            maxtasks (int):
+                number of copies this process is allowed to have before it
+                exits. Manager will continuously create workers as needed.
+                This exists primarily to keep memory from getting fragmented
+                during copies.
+        """
         super(_MultiProcessCopierWorker, self).__init__(*args, **kwargs)
 
         self._joblist = joblist
@@ -339,25 +393,44 @@ class _MultiProcessCopierWorker(multiprocessing.Process):
         self._error_queue = error_queue
         self._device_full_event = device_full_event
 
-        self._maxtasks = maxtasks
+        self.maxtasks = maxtasks
 
-    def run(self):
+    def run(self, maxloops=-1):
+        """ Main loop.
+
+        Args:
+            maxloops (int, optional):
+                maximum loops before loop exits.
+                negative numbers loop indefinitely.
+                for testing.
+
+
+        Returns:
+            int: number of loops ran before exit.
+        """
         loop_count = 0
-        while loop_count < self._maxtasks:
+        files_processed = 0
+        while files_processed < self.maxtasks:
+            # for testing
+            if maxloops - loop_count == 0:
+                return loop_count
+
             # device lock being set also acts like a poison pill
             if self._device_full_event.is_set():
                 logger.debug('Process Exit, device full')
-                return
+                return loop_count
 
             # try retrieving next item from list, loop if unavailable
             try:
                 data = self._joblist.pop(0)
             except IndexError:
+                time.sleep(0.2)
+                loop_count += 1
                 continue
 
             # `None` is poison pill, causing exit
             if data is None:
-                return
+                return loop_count
 
             # inform wip queue that job started
             self._started_queue.put(data)
@@ -372,12 +445,14 @@ class _MultiProcessCopierWorker(multiprocessing.Process):
                     self._error_queue.put(data)
                     raise
                 self._device_full_event.set()
-                return
+                return loop_count
 
             # increment loop count, so we can kill worker, and release memory
+            files_processed += 1
             loop_count += 1
 
         logger.debug('Worker maxtasks reached. Exiting')
+        return loop_count
 
     def _exception_indicates_device_full(self, os_error):
         """
