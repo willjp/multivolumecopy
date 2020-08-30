@@ -5,6 +5,9 @@ import abc
 import os
 
 
+POSIX_DEVICE_BUSY_ERRNO = 16
+
+
 class Reconciler(object):
     """ Produces estimate of lastindex on the volume.
     """
@@ -68,7 +71,7 @@ class Reconciler(object):
         # find and remove empty directories as well
         directories = []
         for (root, _, filenames) in os.walk(self.options.output):
-            if not filenames:
+            if not filenames and root != self.options.output:
                 directories.append(root)
         return directories
 

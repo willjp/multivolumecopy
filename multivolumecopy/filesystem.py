@@ -109,7 +109,7 @@ def directory_size(directory):
 
         for filename in filenames:
             filepath = '{}/{}'.format(root, filename)
-            if os.path.islink(dirpath):
+            if os.path.islink(filename):
                 total_bytes += os.lstat(filepath).st_size
             else:
                 total_bytes += os.path.getsize(filepath)
