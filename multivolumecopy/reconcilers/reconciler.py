@@ -73,6 +73,7 @@ class Reconciler(object):
         for (root, _, filenames) in os.walk(self.options.output):
             if not filenames and root != self.options.output:
                 directories.append(root)
-        return directories
+        # return directories in a safe order for deletion
+        return sorted(directories, reverse=True)
 
 
