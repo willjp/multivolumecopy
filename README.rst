@@ -10,13 +10,30 @@ Tool to backup a fileserver to multiple smaller hard-drives.
 Usage
 -----
 
+Perform backups, prompting for additional drive as required.
+
 .. code-block:: bash
 
-    multivolumecopy /mnt/src -o /mnt/usb
-    multivolumecopy /mnt/src/{books,ambient,radio} -o /mnt/usb
+    multivolumecopy /mnt/src -o /mnt/usb                        # copy from single source
+    multivolumecopy /mnt/src/{books,ambient,radio} -o /mnt/usb  # copy from multiple sources
 
     # when /mnt/usb is full, you'll be prompted to replace it
     # with another disk
+
+
+You can also verify that a volume of backup is sane, provided
+that you know the first/last index from `.mvcopy-jobdata.json` that is expected
+in your output directory.
+
+.. code-block:: bash
+
+    # verify that /mnt/usb has updated files corresponding
+    # to indexes 0-300 in .mvcopy-jobdata.json
+
+    multivolumecopy --verify \
+      -f .mvcopy-jobdata.json  \
+      -i 0 -si 300 \
+      -o /mnt/usb
 
 
 Install
