@@ -7,7 +7,7 @@ import argparse
 import logging
 import sys
 from multivolumecopy.resolvers import directorylistresolver, jobfileresolver
-from multivolumecopy import copyoptions
+from multivolumecopy import copyoptions, verifier
 from multivolumecopy.copiers import multiprocesscopier
 
 
@@ -58,6 +58,10 @@ class CommandlineInterface(object):
             metavar='533',
             type=int,
         )
+        self.parser.add_argument(
+            '--verify', help='Verify a single volume of a backup',
+            action='store_true',
+        )
 
         # misc
         self.parser.add_argument(
@@ -87,8 +91,16 @@ class CommandlineInterface(object):
 
     def _start(self, args):
         self._get_copyoptions_from_args(args)
-        source = self._get_copysource_from_args(args)
-        copier_ = multiprocesscopier.MultiProcessCopier(source, self.options)
+        resolver = self._get_resolver_from_args(args)
+
+        if args.verify:
+            verifier_ = verifier.Verifier(resolver, self.options)
+            results = verifier_.verify(args.device_startindex, args.device.select_index)
+            print(results.format())
+            exitcode = int(not results.valid())
+            sys.exit(exitcode)
+
+        copier_ = multiprocesscopier.MultiProcessCopier(resolver, self.options)
 
         copier_.start(args.device_startindex, args.select_index)
 
@@ -116,7 +128,7 @@ class CommandlineInterface(object):
         self.options.device_padding = args.device_padding
         self.options.show_progressbar = not args.hide_progress
 
-    def _get_copysource_from_args(self, args):
+    def _get_resolver_from_args(self, args):
         if args.jobfile:
             return jobfileresolver.JobFileResolver(args.jobfile, self.options)
         if args.srcpaths:
