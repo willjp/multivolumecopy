@@ -1,5 +1,6 @@
-from multivolumecopy.resolvers import resolver
+import multiprocessing
 import os
+from multivolumecopy.resolvers import resolver
 import multivolumecopy.copyfile
 
 
@@ -16,65 +17,73 @@ class DirectoryListResolver(resolver.Resolver):
         super(DirectoryListResolver, self).__init__(options)
         self._directories = directories
 
-    def get_copyfiles(self, device_start_index=None):
-        srcpaths = sorted([os.path.expanduser(p) for p in self._directories])
-        copyfiles = self._list_copyfiles(srcpaths)
+    def get_copyfiles(self, device_start_index=None, start_index=None):
+        with multiprocessing.Pool(processes=1) as pool:
+            return pool.apply(_get_copyfiles, (self.options.output,
+                                               self._directories,
+                                               device_start_index))
 
-        # affects reconciliation and files to be copied.
-        # determines when we start counting files that need to be
-        # copied to this device.
-        if device_start_index:
-            copyfiles = copyfiles[device_start_index:]
 
-        return copyfiles
+def _get_copyfiles(output, directories, device_start_index=None):
+    srcpaths = sorted([os.path.expanduser(p) for p in directories])
+    copyfiles = _list_copyfiles(srcpaths, output)
 
-    def _list_copyfiles(self, srcpaths):
-        """
-        Produces a list of all files that will be copied.
+    # affects reconciliation and files to be copied.
+    # determines when we start counting files that need to be
+    # copied to this device.
+    if device_start_index:
+        copyfiles = copyfiles[device_start_index:]
 
-        Args:
-            srcpaths (list):
-            output (str):
+    return tuple(copyfiles)
 
-        Returns:
 
-            .. code-block:: python
+def _list_copyfiles(srcpaths, output):
+    """
+    Produces a list of all files that will be copied.
 
-                [
-                    {
-                        'src': '/src/path',
-                        'dst': '/dst/path',
-                        'bytes': 1024,
-                        'index': 0,
-                    },
-                    ...
-                ]
+    Args:
+        srcpaths (list):
+        output (str):
 
-        """
-        copyfiles = []  # [{'src': '/src/path', 'dst':'/dst/patht', 'bytes':1024}]
-        for srcpath in srcpaths:
-            srcpath = os.path.abspath(srcpath)
+    Returns:
 
-            for (root, dirnames, filenames) in os.walk(srcpath, topdown=True):
-                for filename in filenames:
-                    filepath = os.path.abspath('{}/{}'.format(root, filename))
-                    relpath = filepath[len(srcpath) + 1:]
-                    copyfiles.append({
-                        'src':      filepath,
-                        'dst':      os.path.abspath('{}/{}'.format(self.options.output, relpath)),
-                        'relpath':  relpath,
-                        'bytes':    os.path.getsize(filepath),
-                    })
+        .. code-block:: python
 
-        # sort alphabetically by src
-        copyfiles.sort(key=lambda x: x['src'])
+            [
+                {
+                    'src': '/src/path',
+                    'dst': '/dst/path',
+                    'bytes': 1024,
+                    'index': 0,
+                },
+                ...
+            ]
 
-        # add index
-        for i in range(len(copyfiles)):
-            copyfiles[i]['index'] = i
+    """
+    copyfiles = []  # [{'src': '/src/path', 'dst':'/dst/patht', 'bytes':1024}]
+    for srcpath in srcpaths:
+        srcpath = os.path.abspath(srcpath)
 
-        # convert to a tuple of namedtuples.
-        # (list[dict] consumes lots of memory)
-        return tuple([multivolumecopy.copyfile.CopyFile(**kwargs) for kwargs in copyfiles])
+        for (root, _, filenames) in os.walk(srcpath, topdown=True):
+            for filename in filenames:
+                filepath = os.path.abspath('{}/{}'.format(root, filename))
+                relpath = filepath[len(srcpath) + 1:]
+                copyfiles.append({
+                    'src':      filepath,
+                    'dst':      os.path.abspath('{}/{}'.format(output, relpath)),
+                    'relpath':  relpath,
+                    'bytes':    os.path.getsize(filepath),
+                })
+
+    # sort alphabetically by src
+    copyfiles.sort(key=lambda x: x['src'])
+
+    # add index
+    for i in range(len(copyfiles)):
+        copyfiles[i]['index'] = i
+
+    # convert to a tuple of namedtuples.
+    # (list[dict] consumes lots of memory)
+    return tuple([multivolumecopy.copyfile.CopyFile(**kwargs) for kwargs in copyfiles])
 
 

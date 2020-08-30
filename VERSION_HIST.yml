@@ -10,7 +10,7 @@
     - progress flow 
     - adds index to progress
     - abandons pytest-runner in favour of using tox/pytest directly
-0.2.0:
+0.2.0: # released
     - rewritten, divided into logical components
     - some memory optimizations
     - files copied in multiple separate worker processes
@@ -21,3 +21,7 @@
     - copyfiles, and the list that contains them are now immutable, for memory reasons.
     - prompts/requeues if disk is full (if estimation was incorrect)
     - adds interactive test for sanity check
+0.2.1:
+    - multiprocessing in resolution/reconciliation to try to decrease memory usage.
+    # - option to verify output against files
+

@@ -31,3 +31,5 @@ class Resolver(object):
         """
         raise NotImplementedError()
 
+    def get_copyfiles_multiprocess(self, device_start_index=None, start_index=None):
+        raise NotImplementedError()

@@ -9,7 +9,8 @@ POSIX_DEVICE_BUSY_ERRNO = 16
 
 
 class Reconciler(object):
-    """ Produces estimate of lastindex on the volume.
+    """ Estimates which files will fit on disk, and cleans up files
+    not associated with the chunk of files to be copied.
     """
     __metaclass__ = abc.ABCMeta
 

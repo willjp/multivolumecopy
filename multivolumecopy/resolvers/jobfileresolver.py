@@ -1,5 +1,6 @@
-from multivolumecopy.resolvers import resolver
 import json
+import multiprocessing
+from multivolumecopy.resolvers import resolver
 import multivolumecopy.copyfile
 
 
@@ -26,8 +27,22 @@ class JobFileResolver(resolver.Resolver):
         self._filepath = filepath
 
     def get_copyfiles(self, device_start_index=None, start_index=None):
-        with open(self._filepath, 'r') as fd:
-            raw_copyfiles = json.loads(fd.read())
-        return tuple([multivolumecopy.copyfile.CopyFile(*x) for x in raw_copyfiles])
+        """
+
+        .. code-block:: python
+
+            [
+                CopyFile(src='/src/a.txt', dst='/dst/a.txt', relpath='a.txt', bytes=1024, index=0),
+                CopyFile(src='/src/b.txt', dst='/dst/b.txt', relpath='b.txt', bytes=1024, index=1),
+                CopyFile(src='/src/c.txt', dst='/dst/c.txt', relpath='c.txt', bytes=1024, index=2),
+                ...
+            ]
+        """
+        with multiprocessing.Pool(processes=1) as pool:
+            return pool.apply(_get_copyfiles, (self._filepath, device_start_index, start_index))
 
 
+def _get_copyfiles(filepath, device_start_index=None, start_index=None):
+    with open(filepath, 'r') as fd:
+        raw_copyfiles = json.loads(fd.read())
+    return tuple([multivolumecopy.copyfile.CopyFile(*x) for x in raw_copyfiles])
