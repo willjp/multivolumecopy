@@ -31,6 +31,24 @@ class Test_size_to_bytes(object):
         assert result == size_in_bytes
 
 
+
+class Test_bytes_to_unit(object):
+    @pytest.mark.parametrize(
+        'size, unit, converted_size',
+        [
+            (1, 'B', 1),
+            (1000, 'K', 1),
+            (1000000, 'M', 1),
+            (1000000000, 'G', 1),
+            (1000000000000, 'T', 1),
+            (500, 'K', 0.5),
+        ]
+    )
+    def test_bytes_to_unit(object, size, unit, converted_size):
+        result = filesystem.bytes_to_unit(size, unit)
+        assert result == converted_size
+
+
 class Test_backup_bytes(object):
     def test(self):
         def walk_results(srcpath, *args, **kwargs):

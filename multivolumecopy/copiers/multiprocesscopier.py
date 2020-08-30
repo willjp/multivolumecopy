@@ -2,11 +2,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import logging
-import time
 import multiprocessing
 import multiprocessing.managers
+import os
 import queue
 import sys
+import time
 from multivolumecopy import filesystem
 from multivolumecopy.copiers import copier
 from multivolumecopy.progress import lineformatter
@@ -443,10 +444,13 @@ class _MultiProcessCopierWorker(multiprocessing.Process):
 
             # otherwise data is a single copyfile dict.
             try:
-                kwargs =  dict(mtime=self.options.compare_mtime,
-                               size=self.options.compare_size,
-                               checksum=self.options.compare_checksum)
-                if filesystem.files_different(data.src, data.dst, **kwargs):
+                kwargs = dict(mtime=self.options.compare_mtime,
+                              size=self.options.compare_size,
+                              checksum=self.options.compare_checksum)
+                if not os.path.isfile(data.dst):
+                    filesystem.copyfile(src=data.src, dst=data.dst, reraise=True, log_errors=False)
+                    filesystem.copyfilestat(src=data.src, dst=data.dst)
+                elif filesystem.files_different(data.src, data.dst, **kwargs):
                     filesystem.copyfile(src=data.src, dst=data.dst, reraise=True, log_errors=False)
                     filesystem.copyfilestat(src=data.src, dst=data.dst)
                 self._completed_queue.put(data)

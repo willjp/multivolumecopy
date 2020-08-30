@@ -12,6 +12,13 @@ import shutil
 
 
 logger = logging.getLogger(__name__)
+_UNIT_TO_BYTES = (
+    (('T', 'TB'), 1000000000000),
+    (('G', 'GB'), 1000000000),
+    (('M', 'MB'), 1000000),
+    (('K', 'KB'), 1000),
+    (('B', ''), 1),
+)
 
 
 def size_to_bytes(size):
@@ -25,13 +32,7 @@ def size_to_bytes(size):
         int: a size in bytes
     """
     size = str(size)
-    unit_to_bytes = {
-        ('T', 'TB'): 1000000000000,
-        ('G', 'GB'): 1000000000,
-        ('M', 'MB'): 1000000,
-        ('K', 'KB'): 1000,
-        ('B', ''): 1,
-    }
+    unit_to_bytes = dict(_UNIT_TO_BYTES)
     match = re.search('[a-zA-Z]+$', size)
     if match:
         unit = match.group()
@@ -48,6 +49,35 @@ def size_to_bytes(size):
         raise NotImplementedError('Unable to identify unit: {}'.format(unit))
 
     return size * multiplier
+
+
+def bytes_to_unit(size, unit):
+    """ Converts an integer of bytes to the unit of your choosing.
+
+    Args:
+        size (int): ``(ex: 100)``
+        unit (str): ``(ex: 'M' 'MB' 'TB')``
+    Returns:
+        float: size in unit of your choosing.
+    """
+    for i in range(len(_UNIT_TO_BYTES)):
+        units = _UNIT_TO_BYTES[i][0]
+        if unit in units:
+            return size / _UNIT_TO_BYTES[i][1]
+    raise NotImplementedError('Unrecognized Unit: {}'.format(unit))
+
+
+def format_size(size, unit, round_by=2):
+    """ Produces string with size in bytes expressed as a unit.
+
+    Args:
+        size (int): ``(ex: 100)``
+        unit (str): ``(ex: 'M' 'MB' 'TB')``
+    Returns:
+        str: ``(ex: '10G')``
+    """
+    size_in_unit = bytes_to_unit(size, unit)
+    return '{}{}'.format(round(size_in_unit, round_by), unit)
 
 
 def volume_capacity(output):

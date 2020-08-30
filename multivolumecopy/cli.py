@@ -35,7 +35,8 @@ class CommandlineInterface(object):
     def _setup_parser(self):
         # new job
         self.parser.add_argument(
-            'srcpaths', nargs='+', help='List of filepaths to copy'
+            'srcpaths', nargs='*', help='List of filepaths to copy',
+            default=[],
         )
 
         # continue job
@@ -95,7 +96,7 @@ class CommandlineInterface(object):
 
         if args.verify:
             verifier_ = verifier.Verifier(resolver, self.options)
-            results = verifier_.verify(args.device_startindex, args.device.select_index)
+            results = verifier_.verify(args.device_startindex, args.select_index)
             print(results.format())
             exitcode = int(not results.valid())
             sys.exit(exitcode)

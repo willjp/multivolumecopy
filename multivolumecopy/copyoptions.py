@@ -43,6 +43,9 @@ class CopyOptions(object):
         self.compare_size = False
         self.compare_checksum = False
 
+        # Display Size Unit
+        self.size_unit = 'G'
+
         # ================
         # without defaults
         # ================
