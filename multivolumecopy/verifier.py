@@ -77,40 +77,68 @@ class VerifyResults(object):
     def format(self):
         """ Generates a report of a volume's backup, with the goal of identifying issues.
         """
-        msg = '======== SUMMARY ========\n'
-        msg += 'VOLUME SIZE:    [{:<5}] {}\n'.format(
+        warnings = []
+        checks = []
+        msg = '=================== SUMMARY ===================\n'
+        msg += '  VOLUME SIZE:    [{:<5}] {}\n'.format(
             filesystem.format_size(self.device_capacity_bytes, self.options.size_unit),
             filesystem.format_size(self.device_capacity_bytes, 'B'),
         )
-        msg += 'BACKUP SIZE:    [{:<5}] {}\n'.format(
+        msg += '  BACKUP SIZE:    [{:<5}] {}\n'.format(
             filesystem.format_size(self.backup_bytes, self.options.size_unit),
             filesystem.format_size(self.backup_bytes, 'B'),
         )
-        msg += 'EXPECTED SIZE:  [{:<5}] {}\n'.format(
+        msg += '  EXPECTED SIZE:  [{:<5}] {}\n'.format(
             filesystem.format_size(self.copied_bytes, self.options.size_unit),
             filesystem.format_size(self.copied_bytes, 'B'),
         )
-        msg += '=========================\n'
+        msg += '\n'
 
-        if self.different_indexes or self.missing_indexes:
+        # check files exist
+        checks, warnings = self._format_check_all_files_exist(checks, warnings)
+        checks, warnings = self._format_check_copied_matches_expectated(checks, warnings)
+
+        # format checks
+        if checks:
+            msg += '==================== CHECKS ===================\n'
+            msg += '  ' + '\n  '.join(checks) + '\n\n'
+
+        if warnings:
             msg += '=================== WARNING ===================\n'
-            msg += '- differences between backup and source detected '
-
-            if self.different_indexes:
-                msg += 'DIFFERENT:\n'
-                for index in self.different_indexes:
-                    data = self.copyfiles[index]
-                    msg += '  [{}]\n    {}\n    {}\n'.format(data.index, data.src, data.dst)
-
-            if self.missing_indexes:
-                msg += '\n'
-                msg += 'MISSING:\n'
-                for index in self.missing_indexes:
-                    data = self.copyfiles[index]
-                    msg += '  [{}]\n    {}\n    {}\n'.format(data.index, data.src, data.dst)
-            msg += '===============================================\n'
+            msg += '  ' + '\n  '.join(warnings) + '\n'
+        msg += '===============================================\n'
 
         return msg
+
+    def _format_check_all_files_exist(self, checks, warnings):
+        if self.different_indexes or self.missing_indexes:
+            checks.append('[ ] all expected files backed up')
+
+            warn = ''
+            if self.different_indexes:
+                warn += 'DIFFERENT:\n'
+                for index in self.different_indexes:
+                    data = self.copyfiles[index]
+                    warn += '  [{}]\n    {}\n    {}\n'.format(data.index, data.src, data.dst)
+
+            if self.missing_indexes:
+                warn += 'MISSING:\n'
+                for index in self.missing_indexes:
+                    data = self.copyfiles[index]
+                    warn += '  [{}]\n    {}\n    {}\n'.format(data.index, data.src, data.dst)
+            warnings.append(warn)
+        else:
+            checks.append('[x] all expected files backed up')
+        return checks, warnings
+
+    def _format_check_copied_matches_expectated(self, checks, warnings):
+        if self.backup_bytes > self.copied_bytes:
+            checks.append('[ ] expected size roughly matches backup size')
+            warn = '- (backup-size > expected) This may indicate that files exist in output that are not related to backup\n'
+            warnings.append(warn)
+        else:
+            checks.append('[x] expected size roughly matches backup size')
+        return checks, warnings
 
     def valid(self):
         """ Quick n' dirty, does this look valid?
