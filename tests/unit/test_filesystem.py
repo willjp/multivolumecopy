@@ -1,15 +1,10 @@
 #!/usr/bin/env python
-# builtin
-from __future__ import unicode_literals
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-# package
-# external
-import pytest
-import mock
-# internal
 from multivolumecopy import filesystem
+import mock
+import pytest
 
 
 ns = filesystem.__name__
@@ -86,7 +81,7 @@ class Test_files_different(object):
             mtime=True, size=False, checksum=False,
             mtime_a=111.1, mtime_b=111.1,
         )
-        assert result is True
+        assert result is False
 
     def test_same_size(self):
         result = self.files_different(

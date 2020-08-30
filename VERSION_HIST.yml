@@ -23,5 +23,6 @@
     - adds interactive test for sanity check
 0.2.1:
     - multiprocessing in resolution/reconciliation to try to decrease memory usage.
-    # - option to verify output against files
+    - file confirms a copy is required before copying
+    # - new verify option
 

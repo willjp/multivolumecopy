@@ -319,6 +319,7 @@ class _MultiProcessCopierWorkerManager(object):
                                                    self._completed_queue,
                                                    self._error_queue,
                                                    self._device_full_lock,
+                                                   self.options,
                                                    maxtasks=self.options.max_worker_tasks)
                 self._workers.append(worker)
                 worker.start()
@@ -360,7 +361,7 @@ class _MultiProcessCopierWorker(multiprocessing.Process):
     """ Performs copy on files added to the queue.
     Runs until it's lifespan is reached, or it receives a poison pill from the queue.
     """
-    def __init__(self, joblist, started_queue, completed_queue, error_queue, device_full_event, maxtasks=5, *args, **kwargs):
+    def __init__(self, joblist, started_queue, completed_queue, error_queue, device_full_event, options, maxtasks=5, *args, **kwargs):
         """
 
         Args:
@@ -380,6 +381,9 @@ class _MultiProcessCopierWorker(multiprocessing.Process):
             device_full_event (multiprocessing.Event):
                 event that is set when the disk indicates it is full.
 
+            options (copyoptions.CopyOptions):
+                the copy options
+
             maxtasks (int):
                 number of copies this process is allowed to have before it
                 exits. Manager will continuously create workers as needed.
@@ -393,6 +397,7 @@ class _MultiProcessCopierWorker(multiprocessing.Process):
         self._completed_queue = completed_queue
         self._error_queue = error_queue
         self._device_full_event = device_full_event
+        self.options = options
 
         self.maxtasks = maxtasks
 
@@ -438,8 +443,12 @@ class _MultiProcessCopierWorker(multiprocessing.Process):
 
             # otherwise data is a single copyfile dict.
             try:
-                filesystem.copyfile(src=data.src, dst=data.dst, reraise=True, log_errors=False)
-                filesystem.copyfilestat(src=data.src, dst=data.dst)
+                kwargs =  dict(mtime=self.options.compare_mtime,
+                               size=self.options.compare_size,
+                               checksum=self.options.compare_checksum)
+                if filesystem.files_different(data.src, data.dst, **kwargs):
+                    filesystem.copyfile(src=data.src, dst=data.dst, reraise=True, log_errors=False)
+                    filesystem.copyfilestat(src=data.src, dst=data.dst)
                 self._completed_queue.put(data)
             except(OSError) as exc:
                 if not self._exception_indicates_device_full(exc):

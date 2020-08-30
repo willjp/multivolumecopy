@@ -209,6 +209,7 @@ class Test_MultiProcessCopierWorker:
             self.completed_queue,
             self.error_queue,
             self.device_full_lock,
+            self.options,
             maxtasks=3,
         )
 
@@ -243,6 +244,14 @@ class Test_MultiProcessCopierWorker:
             reraise=True,
             log_errors=False
         )
+
+    @mock.patch('multivolumecopy.copiers.multiprocesscopier.filesystem')
+    def test_does_not_copy_file_if_files_not_different(self, m_filesystem):
+        m_filesystem.files_different.return_value = False
+        filedata = MockResolver.FILE_A
+        self.worker._joblist = [filedata]
+        loops = self.worker.run(maxloops=1)
+        assert not m_filesystem.copyfile.called
 
     @mock.patch('multivolumecopy.copiers.multiprocesscopier.filesystem')
     def test_copies_file_stats(self, m_filesystem):

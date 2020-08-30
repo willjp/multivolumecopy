@@ -165,7 +165,7 @@ def files_different(file_a, file_b, mtime=True, size=True, checksum=False):
     checkmsg = []
     if mtime:
         # reporting differences despite repr of float being equal
-        checks.append(int(os.path.getmtime(file_a)) <= int(os.path.getmtime(file_b)))
+        checks.append(int(os.path.getmtime(file_a)) != int(os.path.getmtime(file_b)))
         checkmsg.append('mod-time')
 
     if size:

@@ -2,6 +2,7 @@ import os
 import pytest
 from multivolumecopy import copyoptions
 from multivolumecopy.resolvers import directorylistresolver
+from testhelpers import multiprocessinghelpers
 import mock
 
 
@@ -118,5 +119,6 @@ class TestDirectoryListResolver:
         with mock.patch('{}.os.path.getsize'.format(NS), return_value=1024):
             with mock.patch('{}.os.walk'.format(NS), side_effect=walk_results):
                 with mock.patch.object(os, 'getcwd', return_value='/var/tmp'):
-                    return resolver.get_copyfiles()
+                    with multiprocessinghelpers.mock_pool():
+                        return resolver.get_copyfiles()
 
