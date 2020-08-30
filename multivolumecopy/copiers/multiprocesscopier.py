@@ -69,7 +69,7 @@ class MultiProcessCopier(copier.Copier):
         self.reconciler = reconciler or keepfilesreconciler.KeepFilesReconciler(resolver, options)
 
         # internal data
-        self._copyfiles = []
+        self._copyfiles = tuple()
         self._copied_indexes = []
         self._error_indexes = []
         self._started_indexes = []
