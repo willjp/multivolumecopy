@@ -153,6 +153,7 @@ class MultiProcessCopier(copier.Copier):
                     print('Successfully Copied {} Files'.format(len(self._copyfiles)))
                     return True
                 maxloops -= 1
+                time.sleep(0.1)
         finally:
             self.manager.stop()
             self.manager.join(timeout=3000)
