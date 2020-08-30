@@ -11,7 +11,13 @@
     - adds index to progress
     - abandons pytest-runner in favour of using tox/pytest directly
 x.X.x:
-    - record index to file as completed in case of system crash
+    - rewritten, divided into logical components
+    - some memory optimizations
+    - files copied in multiple separate worker processes
+    - only total progess is displayed
+    - hacky command interpreter while running, entry point for pdb and memory profiling
     - mvcopy-jobdata.json is now a dotfile
-    # fix for non-target files on device being deleted
-    # fix or sidestep memory leak (shutil?)
+    - corrections to reconciliation (deletes files to make room for backup) 
+    - copyfiles, and the list that contains them are now immutable, for memory reasons.
+    - prompts/requeues if disk is full (if estimation was incorrect)
+    - adds interactive test for sanity check
