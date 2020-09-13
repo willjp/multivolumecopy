@@ -246,8 +246,10 @@ class Test_MultiProcessCopierWorker:
         )
 
     @mock.patch('multivolumecopy.copiers.multiprocesscopier.filesystem')
-    def test_does_not_copy_file_if_files_not_different(self, m_filesystem):
+    @mock.patch('os.path')
+    def test_does_not_copy_file_if_files_not_different(self, m_ospath, m_filesystem):
         m_filesystem.files_different.return_value = False
+        m_ospath.isfile.return_value = True
         filedata = MockResolver.FILE_A
         self.worker._joblist = [filedata]
         loops = self.worker.run(maxloops=1)

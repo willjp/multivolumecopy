@@ -43,6 +43,7 @@ class JobFileResolver(resolver.Resolver):
 
 
 def _get_copyfiles(filepath, device_start_index=None, start_index=None):
+    # JSON does not free memory well, so we do in separate process
     with open(filepath, 'r') as fd:
         raw_copyfiles = json.loads(fd.read())
     return tuple([multivolumecopy.copyfile.CopyFile(*x) for x in raw_copyfiles])

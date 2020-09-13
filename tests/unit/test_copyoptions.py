@@ -21,7 +21,7 @@ class TestCopyOptions:
     def test_num_workers_defaults_to_avail_cpus_minus_one_if_multi_cpu(self):
         with mock.patch('multiprocessing.cpu_count', return_value=4):
             options = copyoptions.CopyOptions()
-            assert options.num_workers == 3
+            assert options.num_workers == 2
 
     @pytest.mark.skip(reason='not implemented yet')
     def test_valid(self):
