@@ -1,17 +1,19 @@
 
-Safety
-======
+Todo
+====
 
-x [2020/08/29] a commandline tool to (quickly) verify that a 
-  backup has actually copied everything it was supposed to.
+* [2020/09/13] add option to configure number of workers
+  on commandline. Add warning about memory consumption with example.
+  (10TB w/ 2x workers, ZFS eats remaining 8GB ram)
 
-x [2020/08/28] move reslovers to a multiprocess producer pattern.
-  Despite GC, memory is not being freed for OS.
+* [2020/09/13] write tests for verification
 
-* [2020/08/30] the memory does not spike until files start getting copied.
-  I believe the culprit is now the lists that maintain wip copyfiles.
-  If we were to always re-assign the variable to a tuple instead,
-  that might address our memory issues.
+* [2020/09/13] use of -i with -si breaks reconciler
+  (deletes files that it should not before copy starts)
+
+* [2020/09/13] large backups use an unecessary amount of ram to 
+  hold serialized json jobfile. Instead, store one copyfile per line
+  and refer to the indexes. (10MB json file serialized is ~400MB in ram!)
 
 * [2020/08/07] files submitted to srcpaths do not work 
   (either fix, or disallow)
