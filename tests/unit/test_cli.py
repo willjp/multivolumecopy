@@ -49,6 +49,15 @@ class Test_CommandlineInterface(object):
         self.cli.parse_args()
         m_copier.start.assert_called_with(10, None)
 
+    @mock.patch('multivolumecopy.copiers.multiprocesscopier.MultiProcessCopier')
+    def test_parse_args_sets_device_index(self, m_copier_cls):
+        m_copier = mock.Mock()
+        m_copier_cls.return_value = m_copier
+
+        sys.argv = ['multivolumecopy', '--workers', '3', '/src', '-o', '/dst']
+        self.cli.parse_args()
+        assert self.cli.options.workers == 3
+
     @mock.patch('multivolumecopy.resolvers.jobfileresolver.JobFileResolver')
     @mock.patch('multivolumecopy.copiers.multiprocesscopier.MultiProcessCopier')
     def test_parse_args_sets_jobfile(self, m_copier_cls, m_resolver_cls):

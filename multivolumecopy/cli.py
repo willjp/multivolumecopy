@@ -63,6 +63,14 @@ class CommandlineInterface(object):
             '--verify', help='Verify a single volume of a backup',
             action='store_true',
         )
+        self.parser.add_argument(
+            '-w', '--workers',
+            help=('Set the number of worker processes that will simultaneously '
+                  'copy files. Reduce this lower than your number of processor '
+                  'cores if memory consumption is too high'),
+            metavar='2',
+            type=int,
+        )
 
         # misc
         self.parser.add_argument(
@@ -128,6 +136,8 @@ class CommandlineInterface(object):
         self.options.output = args.output
         self.options.device_padding = args.device_padding
         self.options.show_progressbar = not args.hide_progress
+        if args.workers:
+            self.options.num_workers = args.workers
 
     def _get_resolver_from_args(self, args):
         if args.jobfile:
