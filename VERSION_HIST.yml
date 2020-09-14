@@ -24,5 +24,6 @@
 0.2.1:
     - multiprocessing in resolution/reconciliation to try to decrease memory usage.
     - file confirms a copy is required before copying
+x.X.x:
+    - adds '--workers' cli param
     # - new verify option
-
