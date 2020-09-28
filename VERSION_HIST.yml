@@ -21,10 +21,10 @@
     - copyfiles, and the list that contains them are now immutable, for memory reasons.
     - prompts/requeues if disk is full (if estimation was incorrect)
     - adds interactive test for sanity check
-0.2.1:
+0.2.1: # released
     - multiprocessing in resolution/reconciliation to try to decrease memory usage.
     - file confirms a copy is required before copying
-x.X.x:
+0.3.0: # released
     - adds '--workers' cli param
     - tests/corrections to backup verification
 

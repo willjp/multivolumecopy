@@ -2,10 +2,6 @@
 Todo
 ====
 
-* [2020/09/13] add option to configure number of workers
-  on commandline. Add warning about memory consumption with example.
-  (10TB w/ 2x workers, ZFS eats remaining 8GB ram)
-
 * [2020/09/13] large backups use an unecessary amount of ram to 
   hold serialized json jobfile. Instead, store one copyfile per line
   and refer to the indexes. (10MB json file serialized is ~400MB in ram!)
