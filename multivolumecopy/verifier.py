@@ -1,6 +1,10 @@
+import logging
 import os
 from multivolumecopy import filesystem
 from multivolumecopy.resolvers import jobfileresolver
+
+
+logger = logging.getLogger(__name__)
 
 
 class Verifier(object):
@@ -8,18 +12,42 @@ class Verifier(object):
     Ex volume 3 of 5 involved in a backup.
     """
     def __init__(self, resolver, options):
+        """ Constructor.
+
+        Args:
+            resolver (multivolumecopy.resolvers.resolver.Resolver):
+                produces list of copyfiles.
+
+            options (multivolumecopy.copyoptions.CopyOptions):
+                options used for copyjob.
+        """
         self.resolver = resolver
         self.options = options
         self.copyfiles = tuple()
 
     def verify(self, device_start_index, last_copied_index):
+        """
+
+        Args:
+            device_start_index (int):
+                index of first file to be copied on mounted device.
+
+            last_copied_index (int):
+                last index to be copied onto mounted device (estimate).
+
+        Returns:
+            VerifyResults:
+                object with info about the results.
+        """
         self.copyfiles = self.resolver.get_copyfiles(device_start_index)
 
         capacity_bytes = filesystem.volume_capacity(self.options.output)
         backup_bytes = filesystem.directory_size(self.options.output)
         different_indexes = self._find_files_different(device_start_index, last_copied_index)
         missing_indexes = self._find_files_missing(device_start_index, last_copied_index)
-        copied_bytes = self._get_expected_copy_size(device_start_index, last_copied_index)
+        copied_bytes = self._get_expected_copy_size(device_start_index,
+                                                    last_copied_index,
+                                                    missing_indexes)
 
         results = VerifyResults(self.copyfiles, self.options)
         results.device_capacity_bytes = capacity_bytes
@@ -30,6 +58,8 @@ class Verifier(object):
         return results
 
     def _find_files_different(self, device_start_index, last_copied_index):
+        """ Find files that need to be copied.
+        """
         different = []
         kwargs = dict(mtime=self.options.compare_mtime,
                       size=self.options.compare_size,
@@ -37,13 +67,17 @@ class Verifier(object):
         for copyfile in self.copyfiles[device_start_index:last_copied_index]:
             if not os.path.isfile(copyfile.src):
                 continue
+
             if not os.path.isfile(copyfile.dst):
-                continue
-            if filesystem.files_different(copyfile.src, copyfile.dst, **kwargs):
                 different.append(copyfile.index)
+            elif filesystem.files_different(copyfile.src, copyfile.dst, **kwargs):
+                different.append(copyfile.index)
+
         return different
 
     def _find_files_missing(self, device_start_index, last_copied_index):
+        """ Finds src-files that are not present.
+        """
         missing = []
         for copyfile in self.copyfiles[device_start_index:last_copied_index]:
             if not os.path.isfile(copyfile.dst):
@@ -53,11 +87,15 @@ class Verifier(object):
                 missing.append(copyfile.index)
         return missing
 
-    def _get_expected_copy_size(self, device_start_index, last_copied_index):
+    def _get_expected_copy_size(self, device_start_index, last_copied_index, missing_indexes):
         """ Returns sum of sizes from all files successfully copied.
         """
         size = 0
-        for copyfile in self.copyfiles[device_start_index:last_copied_index]:
+        for i in range(device_start_index, last_copied_index):
+            # exclude src-files that are missing - they will not be included in backup
+            if i in missing_indexes:
+                continue
+            copyfile = self.copyfiles[i]
             size += copyfile.bytes
         return size
 
@@ -70,7 +108,7 @@ class VerifyResults(object):
         self.options = options
         self.device_capacity_bytes = 0
         self.backup_bytes = 0
-        self.copied_bytse = 0
+        self.copied_bytes = 0
         self.different_indexes = []
         self.missing_indexes = []
 
