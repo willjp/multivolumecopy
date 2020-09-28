@@ -177,3 +177,84 @@ class TestVerifier:
         return copyfiles
 
 
+class TestVerifyResults:
+    def setup(self):
+        self.options = copyoptions.CopyOptions()
+        self.options.output = '/dst'
+        self.options.size_unit = 'K'
+        copyfiles = self.gen_copyfiles(['a.txt', 'b.txt', 'c.txt'])
+
+        self.results = verifier.VerifyResults(copyfiles, self.options)
+        self.results.device_capacity_bytes = 4096
+        self.results.backup_bytes = 3000
+        self.results.copied_bytes = 3072
+
+    def test_format_summary(self):
+        report = self.results.format()
+        msg = '=================== SUMMARY ===================\n'\
+              '  VOLUME SIZE:    [4.1K ] 4096B\n'\
+              '  BACKUP SIZE:    [3.0K ] 3000B\n'\
+              '  EXPECTED SIZE:  [3.1K ] 3072B\n'\
+              '\n'\
+              '==================== CHECKS ===================\n'\
+              '  [x] all expected files backed up\n'\
+              '  [x] expected size roughly matches backup size\n'\
+              '\n'\
+              '===============================================\n'
+        assert msg == report
+
+    def test_format_highlights_significantly_larger_backup_than_expected(self):
+        self.results.backup_bytes = 3072
+        self.results.copied_bytes = 1024
+        report = self.results.format()
+        msg = '=================== SUMMARY ===================\n'\
+              '  VOLUME SIZE:    [4.1K ] 4096B\n'\
+              '  BACKUP SIZE:    [3.1K ] 3072B\n'\
+              '  EXPECTED SIZE:  [1.0K ] 1024B\n'\
+              '\n'\
+              '==================== CHECKS ===================\n'\
+              '  [x] all expected files backed up\n'\
+              '  [ ] expected size roughly matches backup size\n'\
+              '\n'\
+              '=================== WARNING ===================\n'\
+              '  - (backup-size < expected) This could indicate backup is incomplete\n'\
+              '\n'\
+              '===============================================\n'
+        assert msg == report
+
+    def test_format_highlights_significantly_smaller_backup_than_expected(self):
+        self.results.backup_bytes = 1024
+        self.results.copied_bytes = 3072
+        report = self.results.format()
+        msg = '=================== SUMMARY ===================\n'\
+              '  VOLUME SIZE:    [4.1K ] 4096B\n'\
+              '  BACKUP SIZE:    [1.0K ] 1024B\n'\
+              '  EXPECTED SIZE:  [3.1K ] 3072B\n'\
+              '\n'\
+              '==================== CHECKS ===================\n'\
+              '  [x] all expected files backed up\n'\
+              '  [ ] expected size roughly matches backup size\n'\
+              '\n'\
+              '=================== WARNING ===================\n'\
+              '  - (backup-size > expected) This could indicate output-dir contains files unrelated to backup\n'\
+              '\n'\
+              '===============================================\n'
+        assert msg == report
+
+    def test_format_highlights_different_files(self):
+        assert False
+
+    def test_format_highlights_missing_files(self):
+        assert False
+
+    def gen_copyfiles(self, filenames):
+        copyfiles = []
+        for i in range(0, len(filenames)):
+            filename = filenames[i]
+            copyfile_ = copyfile.CopyFile(src='/src/{}'.format(filename),
+                                          dst='/dst/{}'.format(filename),
+                                          relpath=filename,
+                                          bytes=1024,
+                                          index=i)
+            copyfiles.append(copyfile_)
+        return copyfiles

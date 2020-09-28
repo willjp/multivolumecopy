@@ -77,7 +77,9 @@ def format_size(size, unit, round_by=2):
         str: ``(ex: '10G')``
     """
     size_in_unit = bytes_to_unit(size, unit)
-    return '{}{}'.format(round(size_in_unit, round_by), unit)
+    if round_by > 0:
+        return '{}{}'.format(round(size_in_unit, round_by), unit)
+    return '{}{}'.format(int(size_in_unit), unit)
 
 
 def volume_capacity(output):

@@ -106,9 +106,9 @@ class VerifyResults(object):
     def __init__(self, copyfiles, options):
         self.copyfiles = copyfiles
         self.options = options
-        self.device_capacity_bytes = 0
-        self.backup_bytes = 0
-        self.copied_bytes = 0
+        self.device_capacity_bytes = 0  # total capacity
+        self.backup_bytes = 0           # dirsize of backup
+        self.copied_bytes = 0           # estimated dirsize for backup
         self.different_indexes = []
         self.missing_indexes = []
 
@@ -119,16 +119,16 @@ class VerifyResults(object):
         checks = []
         msg = '=================== SUMMARY ===================\n'
         msg += '  VOLUME SIZE:    [{:<5}] {}\n'.format(
-            filesystem.format_size(self.device_capacity_bytes, self.options.size_unit),
-            filesystem.format_size(self.device_capacity_bytes, 'B'),
+            filesystem.format_size(self.device_capacity_bytes, self.options.size_unit, round_by=1),
+            filesystem.format_size(self.device_capacity_bytes, 'B', round_by=0),
         )
         msg += '  BACKUP SIZE:    [{:<5}] {}\n'.format(
-            filesystem.format_size(self.backup_bytes, self.options.size_unit),
-            filesystem.format_size(self.backup_bytes, 'B'),
+            filesystem.format_size(self.backup_bytes, self.options.size_unit, round_by=1),
+            filesystem.format_size(self.backup_bytes, 'B', round_by=0),
         )
         msg += '  EXPECTED SIZE:  [{:<5}] {}\n'.format(
-            filesystem.format_size(self.copied_bytes, self.options.size_unit),
-            filesystem.format_size(self.copied_bytes, 'B'),
+            filesystem.format_size(self.copied_bytes, self.options.size_unit, round_by=1),
+            filesystem.format_size(self.copied_bytes, 'B', round_by=0),
         )
         msg += '\n'
 
@@ -170,12 +170,25 @@ class VerifyResults(object):
         return checks, warnings
 
     def _format_check_copied_matches_expectated(self, checks, warnings):
-        if self.backup_bytes > self.copied_bytes:
+        # extremely rough checkbox.
+        # size of files varies by filesystem, I don't expect this to be very accurate.
+        # (currently, warning if size difference varies by more than 3% in either direction)
+
+        percent_diff = abs(( (self.backup_bytes - self.copied_bytes)
+                           / (self.backup_bytes + self.copied_bytes)
+                           / 2) * 100)
+
+        if percent_diff >= 3.0:
             checks.append('[ ] expected size roughly matches backup size')
-            warn = '- (backup-size > expected) This may indicate that files exist in output that are not related to backup\n'
-            warnings.append(warn)
+            if self.backup_bytes < self.copied_bytes:
+                warn = '- (backup-size > expected) This could indicate output-dir contains files unrelated to backup\n'
+                warnings.append(warn)
+            else:
+                warn = '- (backup-size < expected) This could indicate backup is incomplete\n'
+                warnings.append(warn)
         else:
             checks.append('[x] expected size roughly matches backup size')
+
         return checks, warnings
 
     def valid(self):
