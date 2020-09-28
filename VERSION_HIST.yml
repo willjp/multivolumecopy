@@ -26,4 +26,5 @@
     - file confirms a copy is required before copying
 x.X.x:
     - adds '--workers' cli param
-    # - new verify option
+    - tests/corrections to backup verification
+

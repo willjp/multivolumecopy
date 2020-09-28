@@ -242,10 +242,52 @@ class TestVerifyResults:
         assert msg == report
 
     def test_format_highlights_different_files(self):
-        assert False
+        self.results.different_indexes = [0, 2]
+        report = self.results.format()
+        msg = '=================== SUMMARY ===================\n'\
+              '  VOLUME SIZE:    [4.1K ] 4096B\n'\
+              '  BACKUP SIZE:    [3.0K ] 3000B\n'\
+              '  EXPECTED SIZE:  [3.1K ] 3072B\n'\
+              '\n'\
+              '==================== CHECKS ===================\n'\
+              '  [ ] all expected files backed up\n'\
+              '  [x] expected size roughly matches backup size\n'\
+              '\n'\
+              '=================== WARNING ===================\n'\
+              '  DIFFERENT:\n'\
+              '    [0]\n'\
+              '      /src/a.txt\n'\
+              '      /dst/a.txt\n'\
+              '    [2]\n'\
+              '      /src/c.txt\n'\
+              '      /dst/c.txt\n'\
+              '\n'\
+              '===============================================\n'
+        assert msg == report
 
     def test_format_highlights_missing_files(self):
-        assert False
+        self.results.missing_indexes = [0, 2]
+        report = self.results.format()
+        msg = '=================== SUMMARY ===================\n'\
+              '  VOLUME SIZE:    [4.1K ] 4096B\n'\
+              '  BACKUP SIZE:    [3.0K ] 3000B\n'\
+              '  EXPECTED SIZE:  [3.1K ] 3072B\n'\
+              '\n'\
+              '==================== CHECKS ===================\n'\
+              '  [ ] all expected files backed up\n'\
+              '  [x] expected size roughly matches backup size\n'\
+              '\n'\
+              '=================== WARNING ===================\n'\
+              '  MISSING:\n'\
+              '    [0]\n'\
+              '      /src/a.txt\n'\
+              '      /dst/a.txt\n'\
+              '    [2]\n'\
+              '      /src/c.txt\n'\
+              '      /dst/c.txt\n'\
+              '\n'\
+              '===============================================\n'
+        assert msg == report
 
     def gen_copyfiles(self, filenames):
         copyfiles = []

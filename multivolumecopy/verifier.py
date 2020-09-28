@@ -157,13 +157,13 @@ class VerifyResults(object):
                 warn += 'DIFFERENT:\n'
                 for index in self.different_indexes:
                     data = self.copyfiles[index]
-                    warn += '  [{}]\n    {}\n    {}\n'.format(data.index, data.src, data.dst)
+                    warn += '    [{}]\n      {}\n      {}\n'.format(data.index, data.src, data.dst)
 
             if self.missing_indexes:
                 warn += 'MISSING:\n'
                 for index in self.missing_indexes:
                     data = self.copyfiles[index]
-                    warn += '  [{}]\n    {}\n    {}\n'.format(data.index, data.src, data.dst)
+                    warn += '    [{}]\n      {}\n      {}\n'.format(data.index, data.src, data.dst)
             warnings.append(warn)
         else:
             checks.append('[x] all expected files backed up')
