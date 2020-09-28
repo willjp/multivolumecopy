@@ -56,8 +56,10 @@ Copy ``data/autocomplete.zsh/_multivolumecopy`` to a location on your ``$fpath``
 Misc
 ----
 
-* :doc:`docs/CONTRIBUTING`
-* :doc:`docs/TECHNICAL_DECISIONS`
-* :doc:`docs/HELPFUL_SUGGESTIONS`
+* contributing_
+* technical_decisions_
+* helpful_suggestions_
 
-
+.. _contributing: ./docs/CONTRIBUTING.rst
+.. _technical_decisions: ./docs/TECHNICAL_DECISIONS.rst
+.. _helpful_suggestions: ./docs/HELPFUL_SUGGESTIONS.rst
