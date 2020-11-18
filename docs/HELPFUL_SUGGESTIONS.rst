@@ -17,7 +17,8 @@ No, Seriously - I freed up 4TB on a 6TB ufs2 partition this way.
 memory consumption is high with ZFS
 -----------------------------------
 
-Decrease the number of workers for this program (ex: `multivolumecopy --workers 1 ...`).
-For example, on a 10T server with 32G ram and 2x workers ZFS consumes about 28G of ram for me.
-This will get freed up as required by the OS.
+Firstly, if running FreeBSD, check `ARC` memory consumption within top (under memory).
+By default, zfs is configured to use the larger of all-but 1GB/5/8 of available ram.
+You can adjust this by configuring `vfs.zfs.arc_max` . See https://www.freebsd.org/doc/handbook/zfs-advanced.html .
 
+If you're on a server with limited resources, reduce the number of workers (ex: `multivolumecopy --workers 1 ...`).
