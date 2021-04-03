@@ -27,4 +27,6 @@
 0.3.0: # released
     - adds '--workers' cli param
     - tests/corrections to backup verification
-
+0.4.0: # released
+    - nix/pipenv dev environment
+    - deletes unused simple_reconiler

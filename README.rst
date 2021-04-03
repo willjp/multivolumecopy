@@ -41,6 +41,17 @@ Install
     pip install 'git+https://github.com/willjp/multivolumecopy@master'
 
 
+Development
+-----------
+
+.. code-block:: bash
+
+    nix-shell
+    pipenv install --dev
+    pipenv shell
+    pytest
+
+
 Configuration
 -------------
 
