@@ -6,8 +6,8 @@
     - progressbar showing current device progress, and overall progress
 0.1.1:
     - fixes issues related to unicode/bytestrings when reading user input from terminal
-    - fixes device progress 
-    - progress flow 
+    - fixes device progress
+    - progress flow
     - adds index to progress
     - abandons pytest-runner in favour of using tox/pytest directly
 0.2.0: # released
@@ -17,7 +17,7 @@
     - only total progess is displayed
     - hacky command interpreter while running, entry point for pdb and memory profiling
     - mvcopy-jobdata.json is now a dotfile
-    - corrections to reconciliation (deletes files to make room for backup) 
+    - corrections to reconciliation (deletes files to make room for backup)
     - copyfiles, and the list that contains them are now immutable, for memory reasons.
     - prompts/requeues if disk is full (if estimation was incorrect)
     - adds interactive test for sanity check
@@ -30,3 +30,5 @@
 0.4.0: # released
     - nix/pipenv dev environment
     - deletes unused simple_reconiler
+0.5.0: # released
+    - adds '-V/--version' cli param

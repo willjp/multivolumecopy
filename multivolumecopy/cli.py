@@ -9,6 +9,7 @@ import sys
 from multivolumecopy.resolvers import directorylistresolver, jobfileresolver
 from multivolumecopy import copyoptions, verifier
 from multivolumecopy.copiers import multiprocesscopier
+import multivolumecopy
 
 
 # The default, method 'fork' creates a copy of
@@ -86,6 +87,10 @@ class CommandlineInterface(object):
         self.parser.add_argument(
             '-o', '--output', help='The path you\'d like to write backups to'
         )
+        self.parser.add_argument(
+            '-V', '--version', help='Print the installed version',
+            action='store_true',
+        )
 
         # logging
         self.parser.add_argument('-v', '--verbose', action='store_true', help='verbose logging')
@@ -93,6 +98,9 @@ class CommandlineInterface(object):
 
     def parse_args(self):
         args = self.parser.parse_args()
+        if args.version:
+            print(multivolumecopy.__version__)
+            sys.exit(0)
         self._validate_args(args)
         self._setup_logging(args)
 
