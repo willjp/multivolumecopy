@@ -36,6 +36,9 @@ Todo
 * [2022/02/26] CopyOptions can compare on modified-time, bytes, or checksums.
   This should be configurable on the cli.
 
+* [2022/02/26] on SIGINFO, print the current progress (then can check progress via ssh)
+
 * [2022/02/27] Since the goal of --device-padding is gracefully handling a new backup HDD
   without causing deletes across all backup drives (with a slightly different number of bytes).
   It would be better to set a fixed-size of the backup in bytes than an offset.
+
