@@ -27,8 +27,15 @@ Todo
   Before deleting/copying, consider printing out est-deletes and est-copied.
   After filling a volume, print what was removed/unchanged/written.
 
-* [2022/02/26] Dump the jobfile, the start-index and last-index
-  on each volume once it's full?
+* [2022/02/26] Dump the jobfile, start-index, last-index on each volume once it's full.
+  (so that any disk can be used to determine if the file exists in the backup)
+  The jobfile/start-stop-indexfile should be the first files copied to a disk (to ensure it is present).
+  The stop-index should then be able to be appended to the `start-stop-indexfile` safely,
+  independently of any set padding.
 
 * [2022/02/26] CopyOptions can compare on modified-time, bytes, or checksums.
   This should be configurable on the cli.
+
+* [2022/02/27] Since the goal of --device-padding is gracefully handling a new backup HDD
+  without causing deletes across all backup drives (with a slightly different number of bytes).
+  It would be better to set a fixed-size of the backup in bytes than an offset.
