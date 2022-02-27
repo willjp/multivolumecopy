@@ -32,3 +32,5 @@ Todo
 
 * [2022/02/26] CopyOptions can compare on modified-time, bytes, or checksums.
   This should be configurable on the cli.
+
+* [2022/02/26] on SIGINFO, print the current progress (then can check progress via ssh)
